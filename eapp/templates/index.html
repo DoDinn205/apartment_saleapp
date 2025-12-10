@@ -1,3 +1,50 @@
 {% extends 'layout/base.html' %}
 
 {% block title %}Trang chủ{% endblock %}
+
+{% block content %}
+
+<!-- Carousel -->
+<div id="demo" class="carousel slide" data-bs-ride="carousel">
+
+
+    <div class="carousel-indicators">
+        {% for img in images %}
+        <button type="button" data-bs-target="#demo"
+                data-bs-slide-to="{{ loop.index0 }}"
+                class="{% if loop.first %}active{% endif %}">
+        </button>
+        {% endfor %}
+    </div>
+
+    <div class="carousel-inner">
+        {% for img in images %}
+        <div class="carousel-item carousel-item {% if loop.first %}active{% endif %}">
+            <img src="{{ url_for('static', filename=img) }}"
+                 alt="Chung cư" class="d-block w-100">
+            <div class="carousel-caption">
+                <h3>Chung cư DLD</h3>
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    <!-- Left and right controls/icons -->
+    <button class="carousel-control-prev" type="button" data-bs-target="#demo" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#demo" data-bs-slide="next">
+        <span class="carousel-control-next-icon color-black"></span>
+    </button>
+</div>
+
+
+<section class="container">
+    {% for i in range(1,20) %}
+    <h1>{{ i }}</h1>
+    {% endfor %}
+</section>
+
+
+{% endblock %}

@@ -1,26 +1,54 @@
 {% extends 'layout/base.html' %}
 
-{% block title %}Trang đăng ký{% endblock %}
-
 {% block content %}
-<section class="container">
-    <form action="/register" method="post">
-        <div class="form-floating mb-3 mt-3">
-            <input type="text" class="form-control" id="name" placeholder="Nhập họ và tên" name="name">
-            <label for="name">Nhập họ và tên</label>
-        </div>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card-header bg-primary text-white text-center">
+                <h3 class="font-weight-light my-2">ĐĂNG KÝ TÀI KHOẢN</h3>
+            </div>
+            <div class="card-body">
+                {% if err_msg %}
+                <div class="alert alert-danger text-center">
+                    {{ err_msg }}
+                </div>
+                {% endif %}
 
+                <form method="post" action="/register" autocomplete="off">
 
-        <div class="form-floating mb-3 mt-3">
-            <input type="text" class="form-control" id="username" placeholder="Nhập username" name="username">
-            <label for="username">Nhập tên đăng nhập</label>
-        </div>
+                    <div class="form-group">
+                        <label class="small mb-1" for="name">Họ và Tên</label>
+                        <input class="form-control py-4" id="name" name="name" type="text" placeholder="Nhập họ tên..." autocomplete="off" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="small mb-1" for="username">Tên đăng nhập</label>
+                        <input class="form-control py-4" id="username" name="username" type="text" placeholder="Chọn tên đăng nhập..." autocomplete="off" required />
+                    </div>
 
-        <div class="form-floating mt-3 mb-3">
-            <input type="text" class="form-control" id="pwd" placeholder="Nhập password" name="password">
-            <label for="pwd">Nhập mật khẩu</label>
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="small mb-1" for="password">Mật khẩu</label>
+                                <input class="form-control py-4" id="password" name="password" type="password" placeholder="Mật khẩu" autocomplete="new-password" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="small mb-1" for="confirm">Nhập lại mật khẩu</label>
+                                <input class="form-control py-4" id="confirm" name="confirm" type="password" placeholder="Nhập lại" autocomplete="new-password" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mt-4 mb-0">
+                        <button type="submit" class="btn btn-primary btn-block">Tạo tài khoản</button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <div class="small"><a href="/login">Đã có tài khoản? Đăng nhập ngay</a></div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-primary">Đăng nhập</button>
-    </form>
-</section>
+    </div>
+</div>
 {% endblock %}

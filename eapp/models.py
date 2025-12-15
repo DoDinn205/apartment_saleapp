@@ -1,3 +1,4 @@
+from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, ForeignKey, DATETIME, Float, Boolean, Enum
 from sqlalchemy.orm import relationship
 from __init__ import db, app
@@ -15,7 +16,7 @@ class BaseModel(db.Model):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-class Account(BaseModel):
+class Account(BaseModel, UserMixin):
     __tablename__ = "account"
     username = Column(String(50), nullable=False, unique=True)
     password = Column(String(50), nullable=False)

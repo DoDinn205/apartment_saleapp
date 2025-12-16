@@ -1,5 +1,6 @@
 import hashlib
-from models import Account, CanHo
+from datetime import datetime
+from models import Account, Customer, CanHo, DatPhong
 from __init__ import app, db
 
 
@@ -35,10 +36,31 @@ def add_user(name, username, password):
     password = str(password)
     password_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
 
-    user = Account(name=name,
+    user = Customer(name=name,
                    username=username,
                    password=password_hash,
                    user_type='customer')
 
     db.session.add(user)
     db.session.commit()
+
+
+def add_booking(user_id, canho_id, ngay_nhan, thoi_han):
+    try:
+        # Xử lý ngày tháng về dạng chuẩn
+        if isinstance(ngay_nhan, str):
+            ngay_nhan_obj = datetime.strptime(ngay_nhan, '%Y-%m-%d')
+        else:
+            ngay_nhan_obj = ngay_nhan
+        booking = DatPhong(
+            customer_id=user_id,
+            canho_id=canho_id,
+            ngay_nhan=ngay_nhan_obj,
+            thoi_han=thoi_han,
+        )
+        db.session.add(booking)
+        db.session.commit()
+        return True
+    except Exception as ex:
+        print(f"Lỗi lưu đặt phòng: {ex}")
+        return False

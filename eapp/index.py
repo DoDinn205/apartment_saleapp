@@ -1,7 +1,8 @@
 from flask import render_template, request, redirect, url_for
 from __init__ import app, login
-from flask_login import login_user
+from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
+from models import CanHo
 
 import os
 import utils
@@ -99,11 +100,39 @@ def register_view():
     return render_template('register.html', err_msg=err_msg)
 
 
+# ---Đăng xuất
+@app.route('/logout')
+def logout_view():
+    logout_user()
+    return redirect('/')
+
+
 # ---Chi tiết căn hộ
 @app.route('/apartments/<int:apartment_id>')
 def apartment_detail(apartment_id):
     phong = utils.get_canho_by_id(apartment_id)
     return render_template('apartment.html', apartment=phong)
+
+# ---Đặt phòng
+@app.route('/booking', methods=['POST'])
+@login_required
+def booking_process():
+    try:
+        canho_id = request.form.get('apartment_id')
+        ngay_nhan = request.form.get('start_date')
+        thoi_han = request.form.get('duration')
+
+        if utils.add_booking(current_user.id, canho_id, ngay_nhan, thoi_han):
+            ds_canho = utils.load_canho(canho_id)
+            msg = 'Bạn đã đặt phòng thành công. Chúng tôi sẽ liên hệ bạn sớm!'
+            return render_template('index.html', apartments=ds_canho, success_msg=msg)
+        else:
+            ds_canho = utils.load_canho(canho_id)
+            err = 'Có lỗi xảy ra. Vui lòng thử lại sau!'
+            return render_template('index.html', apartments=ds_canho, err_msg=err)
+    except Exception as ex:
+        ds_canho = utils.load_canho(canho_id)
+        return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}')
 
 
 if __name__ == '__main__':

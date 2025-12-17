@@ -1,6 +1,7 @@
 import hashlib
 from datetime import datetime
-from models import Account, Customer, CanHo, DatPhong
+
+from models import Account, Customer, CanHo, DatPhong,LoaiCanHo
 from __init__ import app, db
 
 
@@ -16,6 +17,8 @@ def load_canho(kw=None):
 def get_canho_by_id(canho_id):
     return CanHo.query.get(canho_id)
 
+def load_loai_canho():
+    return LoaiCanHo.query.all()
 
 def get_user_by_id(user_id):
     return Account.query.get(user_id)

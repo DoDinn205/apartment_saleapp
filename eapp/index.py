@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for
 from __init__ import app, login
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
-from models import CanHo
+
 
 import os
 import utils
@@ -23,30 +23,13 @@ def index():
     except Exception as e:
         print(f"Lỗi load banner: {e}")
 
-    room_types = [
-        {
-            'id': 1,
-            'name': '1 phòng ngủ'
-        },
-        {
-            'id': 2,
-            'name': '2 phòng ngủ'
-        },
-        {
-            'id': 3,
-            'name': '3 phòng ngủ'
-        },
-        {
-            'id': 4,
-            'name': '4 phòng ngủ'
-        }
-    ]
+    loai_canho = utils.load_loai_canho()
 
     kw = request.args.get('keyword')
 
     ds_canho = utils.load_canho(kw=kw)
 
-    return render_template('index.html', images=images, room_types=room_types, apartments=ds_canho)
+    return render_template('index.html', images=images, apartments=ds_canho)
 
 
 @login.user_loader
@@ -113,6 +96,7 @@ def apartment_detail(apartment_id):
     phong = utils.get_canho_by_id(apartment_id)
     return render_template('apartment.html', apartment=phong)
 
+
 # ---Đặt phòng
 @app.route('/booking', methods=['POST'])
 @login_required
@@ -133,6 +117,13 @@ def booking_process():
     except Exception as ex:
         ds_canho = utils.load_canho(canho_id)
         return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}')
+
+
+@app.context_processor
+def common_response():
+    return {
+        'loai_canho': utils.load_loai_canho()
+    }
 
 
 if __name__ == '__main__':

@@ -12,11 +12,17 @@ class ApartmentStatus(enum.Enum):
     DANGTHUE = 2
     BAOTRI = 3
 
-
 class BaseModel(db.Model):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
 
+class LoaiCanHo(BaseModel):
+    __tablename__ = 'loai_can_ho'
+    name = Column(String(50), nullable=False)
+    apartments = relationship('CanHo', backref='apartment_type', lazy=True)
+
+    def __str__(self):
+        return self.name
 
 class Account(BaseModel, UserMixin):
     __tablename__ = "account"
@@ -81,6 +87,7 @@ class CanHo(BaseModel):
     dien_tich = Column(Float, default=0)
     trang_thai = Column(Enum(ApartmentStatus), default=ApartmentStatus.CONTRONG)
     image = Column(String(255), nullable=True)
+    id_loai_can_ho = Column(Integer, ForeignKey(LoaiCanHo.id), nullable=False)
 
     def __str__(self):
         return self.ma_can_ho
@@ -137,25 +144,36 @@ if __name__ == '__main__':
         db.drop_all()
         db.create_all()
         print(">>>Thanh cong")
+
+        t1 = LoaiCanHo(name='1 phòng ngủ')
+        t2 = LoaiCanHo(name='2 phòng ngủ')
+        t3 = LoaiCanHo(name='3 phòng ngủ')
+        t4 = LoaiCanHo(name='4 phòng ngủ')
+
         if CanHo.query.count() == 0:
             c1 = CanHo(ma_can_ho='P101 - Studio', gia_thue=4500000, dien_tich=30,
                        trang_thai=ApartmentStatus.CONTRONG,
-                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c2 = CanHo(ma_can_ho='P205 - 2PN View Phố', gia_thue=7000000, dien_tich=55,
+                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg",
+                       id_loai_can_ho=1)
+            c2 = CanHo(ma_can_ho='P205 - View Phố', gia_thue=7000000, dien_tich=55,
                        trang_thai=ApartmentStatus.DANGTHUE,
-                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c3 = CanHo(ma_can_ho='P301 - 1PN Full đồ', gia_thue=5500000, dien_tich=40,
+                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg",
+                       id_loai_can_ho=2)
+            c3 = CanHo(ma_can_ho='P301 - Full đồ', gia_thue=5500000, dien_tich=40,
                        trang_thai=ApartmentStatus.BAOTRI,
+                       id_loai_can_ho=3,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
             c4 = CanHo(ma_can_ho='P402 - Penhouse Mini', gia_thue=12000000, dien_tich=80,
                        trang_thai=ApartmentStatus.CONTRONG,
+                       id_loai_can_ho=4,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
             c5 = CanHo(ma_can_ho='P105 - Gác xép', gia_thue=3500000, dien_tich=25,
                        trang_thai=ApartmentStatus.CONTRONG,
+                       id_loai_can_ho=1,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
 
             # Lưu vào session và đẩy xuống DB
-            db.session.add_all([c1, c2, c3, c4, c5])
+            db.session.add_all([t1,t2,t3,t4,c1, c2, c3, c4, c5])
 
 
             db.session.commit()

@@ -3,20 +3,43 @@
 {% block content %}
 
 {% if images %}
-<div id="bannerCarousel" class="carousel slide my-4" data-ride="carousel">
+<div id="bannerCarousel" class="carousel slide my-4" data-bs-ride="carousel">
+
+    <!-- Indicators (auto theo số ảnh) -->
+    <div class="carousel-indicators">
+        {% for img in images %}
+        <button type="button"
+                data-bs-target="#bannerCarousel"
+                data-bs-slide-to="{{ loop.index0 }}"
+                class="{% if loop.first %}active{% endif %}"
+                aria-current="{% if loop.first %}true{% endif %}">
+        </button>
+        {% endfor %}
+    </div>
+
+    <!-- Slides -->
     <div class="carousel-inner">
         {% for img in images %}
         <div class="carousel-item {% if loop.first %}active{% endif %}">
-            <img src="{{ url_for('static', filename=img) }}" class="d-block w-100" alt="Banner" style="height: 350px; object-fit: cover;">
+            <img src="{{ url_for('static', filename=img) }}"
+                 class="d-block w-100"
+                 style="height: 350px; object-fit: cover;"
+                 alt="Banner">
         </div>
         {% endfor %}
     </div>
-    <a class="carousel-control-prev" href="#bannerCarousel" role="button" data-slide="prev">
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-    </a>
-    <a class="carousel-control-next" href="#bannerCarousel" role="button" data-slide="next">
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-    </a>
+
+    <!-- Controls -->
+    <button class="carousel-control-prev" type="button"
+            data-bs-target="#bannerCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span>
+    </button>
+
+    <button class="carousel-control-next" type="button"
+            data-bs-target="#bannerCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span>
+    </button>
+
 </div>
 {% endif %}
 
@@ -28,17 +51,18 @@
 
             <form action="/">
                 <div class="input-group mb-3">
-                    <input type="text" class="form-control" name="keyword" placeholder="Nhập mã phòng..." value="{{ request.args.get('keyword', '') }}">
+                    <input type="text" class="form-control" name="keyword" placeholder="Nhập mã phòng..."
+                           value="{{ request.args.get('keyword', '') }}">
                     <div class="input-group-append">
-                        <button class="btn btn-info" type="submit">Tìm</button>
+                        <button class="btn btn-gradient" type="submit">Tìm</button>
                     </div>
                 </div>
             </form>
 
             <h5 class="mt-4">Loại căn hộ</h5>
             <div class="list-group">
-                {% for r in room_types %}
-                <a href="#" class="list-group-item list-group-item-action">{{ r.name }}</a>
+                {% for l in loai_canho %}
+                <a href="#" class="list-group-item list-group-item-action">{{ l.name }}</a>
                 {% endfor %}
             </div>
         </div>
@@ -50,7 +74,8 @@
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card h-100 shadow-sm">
                         <a href="/apartments/{{ p.id }}">
-                            <img class="card-img-top" src="{{ p.image }}" alt="{{ p.ma_can_ho }}" style="height: 200px; object-fit: cover;">
+                            <img class="card-img-top" src="{{ p.image }}" alt="{{ p.ma_can_ho }}"
+                                 style="height: 200px; object-fit: cover;">
                         </a>
 
                         <div class="card-body">
@@ -60,28 +85,29 @@
                             <h5 class="text-danger">{{ "{:,.0f}".format(p.gia_thue) }} VNĐ</h5>
                             <p class="card-text">
                                 Diện tích: {{ p.dien_tich }}m² <br>
+                                Số phòng ngủ: {{ p.id_loai_can_ho }}
                                 {% if p.trang_thai.name == 'CONTRONG' %}
-                                    <span class="badge badge-success">Còn trống</span>
+                                <span class="badge badge-success">Còn trống</span>
                                 {% elif p.trang_thai.name == 'DANGTHUE' %}
-                                    <span class="badge badge-danger">Đang thuê</span>
+                                <span class="badge badge-danger">Đang thuê</span>
                                 {% else %}
-                                    <span class="badge badge-warning">Bảo trì</span>
+                                <span class="badge badge-warning">Bảo trì</span>
                                 {% endif %}
                             </p>
                         </div>
                         <div class="card-footer">
-                            <a href="/apartments/{{ p.id }}" class="btn btn-sm btn-info float-right">Xem chi tiết</a>
+                            <a href="/apartments/{{ p.id }}" class="btn btn-sm btn-info float-right btn-gradient">Xem chi tiết</a>
                         </div>
                     </div>
                 </div>
                 {% else %}
-                    <div class="col-12 text-center text-muted">
-                        <p>Không tìm thấy căn hộ nào.</p>
-                    </div>
+                <div class="col-12 text-center text-muted">
+                    <p>Không tìm thấy căn hộ nào.</p>
+                </div>
                 {% endfor %}
 
             </div>
-            </div>
         </div>
     </div>
+</div>
 {% endblock %}

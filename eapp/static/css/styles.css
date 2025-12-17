@@ -1,0 +1,23 @@
+body{
+    margin-top: 55px;
+}
+
+.mt-120{
+    margin-top: 120px
+}
+
+.background-gradient, .btn-gradient{
+    background: linear-gradient(135deg, #30cfd0, #330867);
+    color: white;
+    border: none;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 10px 25px rgba(24, 165, 167, 0.4);
+  color: #ccc;
+}
+
+.text-gradient{
+    color: linear-gradient(135deg, #30cfd0, #330867);
+}

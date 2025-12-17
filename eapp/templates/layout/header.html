@@ -1,5 +1,5 @@
 <header>
-    <nav class="navbar navbar-expand-sm navbar-dark bg-success">
+    <nav class="navbar navbar-expand-sm navbar-dark bg-success background-gradient fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Apartment Sale App</a>
 
@@ -14,8 +14,8 @@
                         <a class="nav-link dropdown-toggle" href="/" role="button"
                            data-bs-toggle="dropdown">Loại phòng</a>
                         <ul class="dropdown-menu">
-                            {% for r in room_types %}
-                            <li><a class="dropdown-item" href="/">{{ r.name }}</a></li>
+                            {% for l in loai_canho %}
+                            <li><a class="dropdown-item" href="/">{{ l.name }}</a></li>
                             {% endfor %}
                         </ul>
                     </li>

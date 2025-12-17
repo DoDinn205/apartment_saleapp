@@ -10,6 +10,7 @@
             crossorigin="anonymous">
 
     </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" >
     <script>
         window.onload = function() {
             // Tìm tất cả các thông báo (alert) đang hiện
@@ -28,30 +29,30 @@
 </head>
 <body>
 {% block header %}
-    {% include 'layout/header.html' %}
-    {% endblock %}
+{% include 'layout/header.html' %}
+{% endblock %}
 
-    <div class="container mt-3">
-        {% if success_msg %}
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <strong>Thành công!</strong> {{ success_msg }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endif %}
-
-        {% if err_msg %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong>Lỗi!</strong> {{ err_msg }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endif %}
+<div class="container mt-3">
+    {% if success_msg %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Thành công!</strong> {{ success_msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    {% block content required %}
-    {% endblock %}
+    {% endif %}
+
+    {% if err_msg %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Lỗi!</strong> {{ err_msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+</div>
+{% block content required %}
+{% endblock %}
 
 
-    {% block footer %}
-    {% include 'layout/footer.html' %}
-    {% endblock %}
+{% block footer %}
+{% include 'layout/footer.html' %}
+{% endblock %}
 </body>
 </html>

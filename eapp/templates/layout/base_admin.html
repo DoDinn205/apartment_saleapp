@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %} {% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+            crossorigin="anonymous">
+
+    </script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="container">
+    {% if success_msg %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Thành công!</strong> {{ success_msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    {% if err_msg %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Lỗi!</strong> {{ err_msg }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+</div>
+
+{% if current_user.is_authenticated %}
+
+<div class="main-container d-flex">
+        <div class="sidebar" id="side_nav">
+            <div class="header-box px-2 pt-3 pb-4 d-flex justify-content-between">
+                <h1 class="fs-4"><span class="bg-white text-dark rounded shadow px-2 me-2">AS</span> <span
+                        class="text-white">Apartment Sale App</span></h1>
+                <button class="btn d-md-none d-block close-btn px-1 py-0 text-white"><i class="bi bi-list"></i></button>
+            </div>
+
+            <ul class="list-unstyled px-2">
+                <li class="active"><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-menu-app-fill"></i>
+                        Thông tin chung</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-house-fill"></i>
+                        Căn hộ</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-people-fill"></i>
+                        Người thuê</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-file-text-fill"></i>
+                        Hợp đồng</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-receipt"></i>
+                        Hóa đơn</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-list-ol"></i>
+                        Quy định</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-bar-chart-line-fill"></i>
+                        Thống kê báo cáo</a></li>
+            </ul>
+            <hr class="h-color mx-2">
+
+            <ul class="list-unstyled px-2">
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-gear-fill"></i>
+                        Cài đặt</a></li>
+                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-bell-fill"></i>
+                        Thông báo</a></li>
+
+            </ul>
+
+        </div>
+        <div class="content">
+            <nav class="navbar navbar-expand-md navbar-light bg-light">
+                <div class="container-fluid">
+                    <div class="d-flex justify-content-between d-md-none d-block">
+                     <button class="btn px-1 py-0 open-btn me-2"><i class="fal fa-stream"></i></button>
+                        <a class="navbar-brand fs-4" href="#"><span class="bg-dark rounded px-2 py-0 text-white">AS</span></a>
+
+                    </div>
+                    <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                        <i class="fal fa-bars"></i>
+                    </button>
+                    <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+                        <ul class="navbar-nav mb-2 mb-lg-0">
+                            <li class="nav-item">
+                            <a class="nav-link text-warning" href="#">
+                                Hello, {{ current_user.name }}
+                            </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/logout">Đăng xuất</a>
+                            </li>
+
+                        </ul>
+
+                    </div>
+                </div>
+            </nav>
+
+            {% block content required %}
+            {% endblock %}
+
+        </div>
+</div>
+
+
+
+{% else %}
+<h2 class="text-success text-center">ĐĂNG NHẬP QUẢN TRỊ</h2>
+
+<form method="post" action="/login?next=/admin">
+  <div class="form-group">
+    <label for="name">Tên đăng nhập:</label>
+    <input type="text" class="form-control" placeholder="Tên đăng nhập" id="name" name="username" required />
+  </div>
+  <div class="form-group">
+    <label for="pwd">Mật khẩu:</label>
+    <input type="password" class="form-control" placeholder="Mật khẩu" id="pwd" name="password" required />
+  </div>
+  <button type="submit" class="btn btn-primary">Đăng nhập</button>
+</form>
+{% endif %}
+
+
+
+{% block footer %}
+{% include 'layout/footer.html' %}
+{% endblock %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

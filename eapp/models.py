@@ -145,6 +145,10 @@ if __name__ == '__main__':
         db.create_all()
         print(">>>Thanh cong")
 
+        import hashlib
+        a = Admin(username='admin', password=str(hashlib.md5('123456'.encode('utf-8')).hexdigest()), name='Admin')
+        db.session.add(a)
+
         t1 = LoaiCanHo(name='1 phòng ngủ')
         t2 = LoaiCanHo(name='2 phòng ngủ')
         t3 = LoaiCanHo(name='3 phòng ngủ')

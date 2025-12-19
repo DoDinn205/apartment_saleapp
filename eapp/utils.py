@@ -5,12 +5,13 @@ from models import Account, Customer, CanHo, DatPhong,LoaiCanHo
 from __init__ import app, db
 
 
-def load_canho(kw=None):
+def load_canho(kw=None,loai_canho_id=None):
     query = CanHo.query
 
     if kw:
         query = query.filter(CanHo.ma_can_ho.contains(kw))
-
+    if loai_canho_id:
+        query = query.filter(CanHo.id_loai_can_ho.__eq__(loai_canho_id))
     return query.all()
 
 

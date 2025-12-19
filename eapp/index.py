@@ -25,9 +25,10 @@ def index():
 
     loai_canho = utils.load_loai_canho()
 
-    kw = request.args.get('keyword')
 
-    ds_canho = utils.load_canho(kw=kw)
+
+    ds_canho = utils.load_canho(kw=request.args.get('keyword'),
+                                loai_canho_id=request.args.get('id_loai_can_ho'))
 
     return render_template('index.html', images=images, apartments=ds_canho)
 

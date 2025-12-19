@@ -62,7 +62,7 @@
             <h5 class="mt-4">Loại căn hộ</h5>
             <div class="list-group">
                 {% for l in loai_canho %}
-                <a href="#" class="list-group-item list-group-item-action">{{ l.name }}</a>
+                <a href="/?id_loai_can_ho={{ l.id }}" class="list-group-item list-group-item-action">{{ l.name }}</a>
                 {% endfor %}
             </div>
         </div>

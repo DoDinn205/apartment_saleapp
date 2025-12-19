@@ -15,7 +15,7 @@
                            data-bs-toggle="dropdown">Loại phòng</a>
                         <ul class="dropdown-menu">
                             {% for l in loai_canho %}
-                            <li><a class="dropdown-item" href="/">{{ l.name }}</a></li>
+                            <li><a class="dropdown-item" href="/?id_loai_can_ho={{ l.id }}">{{ l.name }}</a></li>
                             {% endfor %}
                         </ul>
                     </li>

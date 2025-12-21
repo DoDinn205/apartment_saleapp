@@ -1,0 +1,85 @@
+{% extends '/layout/base_admin.html' %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+{% block content %}
+            <div class="dashboard-content px-3 pt-4">
+               <h3 class="mb-4">Quản lý Căn hộ</h3>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Thông tin căn hộ</th>
+                        <th>Loại & Giá</th>
+                        <th>Trạng thái & Người thuê</th>
+                        <th>Hợp đồng/Đặt phòng</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in apartments %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+<!--                                <img src="{{ a.image or url_for('static', filename='images/no-img.jpg') }}" -->
+<!--                                     class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">-->
+                                <div>
+                                    <div class="fw-bold text-primary">{{ a.ma_can_ho }}</div>
+                                    <small class="text-muted">{{ a.dien_tich }} m²</small>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="fw-bold">{{ a.apartment_type.name }}</div>
+                            <div class="text-success">{{ "{:,.0f}".format(a.gia_thue) }} đ</div>
+                        </td>
+
+                        <td>
+                            {% if a.hop_dong_hien_tai %}
+                                <span class="badge bg-danger mb-1">Đã cho thuê</span>
+                                <div class="small">
+                                    <i class="bi bi-person"></i>
+                                    {{ a.hop_dong_hien_tai.nguoi_thue_rel.name }}
+                                </div>
+
+                            {% elif a.dat_phong_cho_duyet %}
+                                <span class="badge bg-warning text-dark mb-1">Có người đặt</span>
+                                <div class="small fst-italic">
+                                    Chờ duyệt: {{ a.dat_phong_cho_duyet.customer.name }}
+                                </div>
+
+                            {% else %}
+                                <span class="badge bg-success">Đang trống</span>
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            {% if a.hop_dong_hien_tai %}
+                                <small class="d-block text-muted">Hết hạn:</small>
+                                <strong>{{ a.hop_dong_hien_tai.thoi_han.strftime('%d/%m/%Y') }}</strong>
+                            {% elif a.dat_phong_cho_duyet %}
+                                <small class="d-block text-muted">Ngày nhận:</small>
+                                <strong>{{ a.dat_phong_cho_duyet.ngay_nhan.strftime('%d/%m/%Y') }}</strong>
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-primary" title="Chi tiết"><i class="bi bi-eye"></i></a>
+                            {% if a.dat_phong_cho_duyet %}
+                                <a href="#" class="btn btn-sm btn-success" title="Duyệt đặt phòng"><i class="bi bi-check-lg"></i></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+            </div>
+{% endblock %}

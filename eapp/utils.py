@@ -1,7 +1,9 @@
 import hashlib
 from datetime import datetime
-
+from functools import wraps
+from flask import abort, redirect, url_for
 from models import Account, Customer, CanHo, DatPhong,LoaiCanHo
+from flask_login import current_user
 from __init__ import app, db
 
 
@@ -68,3 +70,21 @@ def add_booking(user_id, canho_id, ngay_nhan, thoi_han):
     except Exception as ex:
         print(f"Lỗi lưu đặt phòng: {ex}")
         return False
+
+#Hàm kiểm tra người dùng có vai trò admin hay không, tương tự như login_required trong bài tập mẫu của thầy
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 1. Kiểm tra đã đăng nhập chưa?
+        if not current_user.is_authenticated:
+            return redirect('/login')  # Chuyển hướng về trang login
+
+        # 2. Kiểm tra có phải admin không?
+        if current_user.user_type != 'admin':
+            # Nếu không phải admin -> Báo lỗi 403 (Forbidden) hoặc đá về trang chủ
+            abort(403)
+
+            # Nếu thỏa mãn -> Cho phép chạy hàm view
+        return f(*args, **kwargs)
+
+    return decorated_function

@@ -21,7 +21,7 @@ class BaseModel(db.Model):
 class LoaiCanHo(BaseModel):
     __tablename__ = 'loai_can_ho'
     name = Column(String(50), nullable=False)
-    apartments = relationship('CanHo', backref='loai_canho', lazy=True)
+    apartments = relationship('CanHo', backref='apartment_type', lazy=True)
 
     def __str__(self):
         return self.name

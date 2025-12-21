@@ -13,17 +13,17 @@ window.onload = function() {
 };
 
 //Xử lý khi nhấn vào các mục menu (li)
-const menuItems = document.querySelectorAll(".sidebar ul li");
-
-menuItems.forEach(item => {
-    item.addEventListener('click', function () {
-        // Tìm và xóa class active của mục cũ (nếu có)
-        const activeItem = document.querySelector(".sidebar ul li.active");
-        if (activeItem) {
-            activeItem.classList.remove('active');
-        }
-        // Thêm class active vào mục vừa nhấn
-        this.classList.add('active');
-    });
-});
+//const menuItems = document.querySelectorAll(".sidebar ul li");
+//
+//menuItems.forEach(item => {
+//    item.addEventListener('click', function () {
+//        // Tìm và xóa class active của mục cũ (nếu có)
+//        const activeItem = document.querySelector(".sidebar ul li.active");
+//        if (activeItem) {
+//            activeItem.classList.remove('active');
+//        }
+//        // Thêm class active vào mục vừa nhấn
+//        this.classList.add('active');
+//    });
+//});
 

@@ -7,46 +7,70 @@
             <div class="card-header text-center background-gradient">
                 <h3 class="font-weight-light my-2">ĐĂNG KÝ TÀI KHOẢN</h3>
             </div>
+
             <div class="card-body">
-                {% if err_msg %}
-                <div class="alert alert-danger text-center">
-                    {{ err_msg }}
-                </div>
-                {% endif %}
 
-                <form method="post" action="/register" autocomplete="off">
+                <form method="post" action="/register" autocomplete="off" novalidate enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
 
+                    <!-- Họ tên -->
                     <div class="form-group">
-                        <label class="small mb-1" for="name">Họ và Tên</label>
-                        <input class="form-control py-4" id="name" name="name" type="text" placeholder="Nhập họ tên..." autocomplete="off" required />
-                    </div>
-                    <div class="form-group">
-                        <label class="small mb-1" for="username">Tên đăng nhập</label>
-                        <input class="form-control py-4" id="username" name="username" type="text" placeholder="Nhập tên đăng nhập..." autocomplete="off" required />
-                    </div>
-
-                    <div class="form-row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="small mb-1" for="password">Mật khẩu</label>
-                                <input class="form-control py-4" id="password" name="password" type="password" placeholder="Mật khẩu" autocomplete="new-password" required />
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="small mb-1" for="confirm">Nhập lại mật khẩu</label>
-                                <input class="form-control py-4" id="confirm" name="confirm" type="password" placeholder="Nhập lại" autocomplete="new-password" required />
-                            </div>
-                        </div>
+                        {{ form.name.label(class="small mb-1") }}
+                        {{ form.name(class="form-control py-4", placeholder="Nhập họ tên...") }}
+                        {% for err in form.name.errors %}
+                        <small class="text-danger">{{ err }}</small>
+                        {% endfor %}
                     </div>
 
-                    <div class="form-group mt-4 mb-0" align="center">
-                        <button type="submit" class="btn btn-block btn-gradient">Tạo tài khoản</button>
+                    <!--Phone number-->
+                    <div class="form-group mt-1">
+                        {{ form.phone.label(class="small mb-1") }}
+                        {{ form.phone(class="form-control py-4", placeholder="Nhập số điện thoại...") }}
+                        {% for err in form.phone.errors %}
+                        <small class="text-danger">{{ err }}</small>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Username -->
+                    <div class="form-group mt-1">
+                        {{ form.username.label(class="small mb-1") }}
+                        {{ form.username(class="form-control py-4", placeholder="Nhập tên đăng nhập...") }}
+                        {% for err in form.username.errors %}
+                        <small class="text-danger">{{ err }}</small>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Password và Confirm -->
+
+                    <div class="form-group mt-1">
+                        {{ form.password.label(class="small mb-1") }}
+                        {{ form.password(class="form-control py-4", placeholder="Nhập mật khẩu...") }}
+                        {% for err in form.password.errors %}
+                        <small class="text-danger">{{ err }}</small>
+                        {% endfor %}
+                    </div>
+
+
+                    <div class="form-group mt-1">
+                        {{ form.confirm.label(class="small mb-1") }}
+                        {{ form.confirm(class="form-control py-4", placeholder="Nhập lại mật khẩu...") }}
+                        {% for err in form.confirm.errors %}
+                        <small class="text-danger">{{ err }}</small>
+                        {% endfor %}
+                    </div>
+
+
+                    <!-- Submit -->
+                    <div class="form-group mt-4 mb-0 text-center">
+                        {{ form.submit(class="btn btn-block btn-gradient") }}
                     </div>
                 </form>
             </div>
+
             <div class="card-footer text-center">
-                <div class="small"><a href="/login">Đã có tài khoản? Đăng nhập ngay</a></div>
+                <div class="small">
+                    <a href="/login">Đã có tài khoản? Đăng nhập ngay</a>
+                </div>
             </div>
         </div>
     </div>

@@ -12,24 +12,28 @@ class ApartmentStatus(enum.Enum):
     DANGTHUE = 2
     BAOTRI = 3
 
+
 class BaseModel(db.Model):
     __abstract__ = True
     id = Column(Integer, primary_key=True, autoincrement=True)
 
+
 class LoaiCanHo(BaseModel):
     __tablename__ = 'loai_can_ho'
     name = Column(String(50), nullable=False)
-    apartments = relationship('CanHo', backref='apartment_type', lazy=True)
+    apartments = relationship('CanHo', backref='loai_canho', lazy=True)
 
     def __str__(self):
         return self.name
+
 
 class Account(BaseModel, UserMixin):
     __tablename__ = "account"
     username = Column(String(50), nullable=False, unique=True)
     password = Column(String(50), nullable=False)
     name = Column(String(50), nullable=False)
-
+    # Một tài khoản chỉ có 1 sdt
+    phone = relationship('PhoneNumber', backref='account', lazy=True, uselist=False)
     # Cột này để phân bệt loại tài khoản (Admin hay Customer)
     user_type = Column(String(50))
 
@@ -73,7 +77,8 @@ class PhoneNumber(BaseModel):
 
     phone = Column(String(12), nullable=False, unique=True)
     type = Column(String(50), nullable=False, default='Cell Phone')
-    user_id = Column(Integer, ForeignKey(Account.id), nullable=False)
+    # 1 sdt chỉ thuộc về 1 tài khoản
+    user_id = Column(Integer, ForeignKey(Account.id), nullable=False, unique=True)
 
     def __str__(self):
         return self.phone
@@ -112,7 +117,7 @@ class HopDong(BaseModel):
 class DatPhong(BaseModel):
     __tablename__ = "dat_phong"
 
-    id= Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     ngay_dat = Column(DATETIME, default=datetime.now())
     ngay_nhan = Column(DATETIME, nullable=False)
     thoi_han = Column(Integer, nullable=False)
@@ -146,7 +151,9 @@ if __name__ == '__main__':
         print(">>>Thanh cong")
 
         import hashlib
-        a = Admin(username='admin', password=str(hashlib.md5('123456'.encode('utf-8')).hexdigest()), name='Admin')
+
+        a = Admin(username='admin', password=str(hashlib.md5('123456'.encode('utf-8')).hexdigest()), name='Admin',
+                  phone=PhoneNumber(phone='0123456789'))
         db.session.add(a)
 
         t1 = LoaiCanHo(name='1 phòng ngủ')
@@ -177,8 +184,7 @@ if __name__ == '__main__':
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
 
             # Lưu vào session và đẩy xuống DB
-            db.session.add_all([t1,t2,t3,t4,c1, c2, c3, c4, c5])
-
+            db.session.add_all([t1, t2, t3, t4, c1, c2, c3, c4, c5])
 
             db.session.commit()
 

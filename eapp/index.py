@@ -7,6 +7,7 @@ from sqlalchemy.sql.operators import endswith_op
 import os
 import utils
 from admin import *
+from forms import RegisterForm
 from utils import check_login
 
 
@@ -64,24 +65,21 @@ def login_view():
 # ---Đăng ký
 @app.route('/register', methods=['GET', 'POST'])
 def register_view():
-    err_msg = ''
-    if request.method == 'POST':
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirm')
+    form = RegisterForm()
+    err_msg = None
+    if form.validate_on_submit():
+        try:
+            utils.add_user(
+                name=form.name.data,
+                phone=form.phone.data,
+                username=form.username.data,
+                password= form.password.data
+            )
+            return redirect('/login')
+        except Exception as ex:
+            err_msg =str(ex)
 
-        if password == confirm_password:
-            name = request.form.get('name')
-            username = request.form.get('username')
-
-            try:
-                utils.add_user(name=name, username=username, password=password)
-
-                return redirect('/login')
-            except Exception as ex:
-                err_msg = 'Hệ thống lỗi hoặc Tên đăng nhập đã tồn tại: ' + str(ex)
-        else:
-            err_msg = 'Mật khẩu không khớp!'
-    return render_template('register.html', err_msg=err_msg)
+    return render_template('register.html',form=form, err_msg=err_msg)
 
 
 # ---Đăng xuất

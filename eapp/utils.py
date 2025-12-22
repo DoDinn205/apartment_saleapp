@@ -11,7 +11,7 @@ from flask_login import current_user
 from __init__ import app, db
 
 
-def load_canho(kw=None, loai_canho_id=None):
+def load_canho(kw=None, loai_canho_id=None, page=1):
     query = CanHo.query
 
     if kw:
@@ -19,12 +19,17 @@ def load_canho(kw=None, loai_canho_id=None):
     # loai_canho_id su dung cho tim kiem bang loai phong
     if loai_canho_id:
         query = query.filter(CanHo.id_loai_can_ho.__eq__(loai_canho_id))
+    if page:
+        start = (page - 1) * app.config['PAGE_SIZE']
+        query = query.slice(start, start + app.config['PAGE_SIZE'])
     return query.all()
 
 
 def get_canho_by_id(canho_id):
     return CanHo.query.get(canho_id)
 
+def count_apartment():
+    return CanHo.query.count()
 
 def load_loai_canho():
     return LoaiCanHo.query.all()

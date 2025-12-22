@@ -161,6 +161,8 @@ if __name__ == '__main__':
         t3 = LoaiCanHo(name='3 phòng ngủ')
         t4 = LoaiCanHo(name='4 phòng ngủ')
 
+        db.session.add_all([t1, t2, t3, t4])
+
         if CanHo.query.count() == 0:
             c1 = CanHo(ma_can_ho='P101 - Studio', gia_thue=4500000, dien_tich=30,
                        trang_thai=ApartmentStatus.CONTRONG,
@@ -174,7 +176,7 @@ if __name__ == '__main__':
                        trang_thai=ApartmentStatus.BAOTRI,
                        id_loai_can_ho=3,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c4 = CanHo(ma_can_ho='P402 - Penhouse Mini', gia_thue=12000000, dien_tich=80,
+            c4 = CanHo(ma_can_ho='P402 - Penthouse Mini', gia_thue=12000000, dien_tich=80,
                        trang_thai=ApartmentStatus.CONTRONG,
                        id_loai_can_ho=4,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
@@ -182,12 +184,36 @@ if __name__ == '__main__':
                        trang_thai=ApartmentStatus.CONTRONG,
                        id_loai_can_ho=1,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
+            c6 = CanHo(ma_can_ho='P106 - Gác lửng', gia_thue=4500000, dien_tich=30,
+                       trang_thai=ApartmentStatus.CONTRONG,
+                       id_loai_can_ho=1,
+                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
+            c7 = CanHo(ma_can_ho='P206 - Căn hộ cao cấp', gia_thue=10000000, dien_tich=90,
+                       trang_thai=ApartmentStatus.DANGTHUE,
+                       id_loai_can_ho=2,
+                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
+            c8 = CanHo(ma_can_ho='P308 - Căn hộ 3 phòng ngủ', gia_thue=9000000, dien_tich=85,
+                       trang_thai=ApartmentStatus.BAOTRI,
+                       id_loai_can_ho=3,
+                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
+            c9 = CanHo(ma_can_ho='P403 - Căn hộ full nội thất', gia_thue=30000000, dien_tich=100,
+                       trang_thai=ApartmentStatus.CONTRONG,
+                       id_loai_can_ho=4,
+                       image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
+            c10 = CanHo(ma_can_ho='P401 - Căn hộ trung cấp', gia_thue=7000000, dien_tich=87,
+                        trang_thai=ApartmentStatus.DANGTHUE,
+                        id_loai_can_ho=4,
+                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
+            c11 = CanHo(ma_can_ho='P207 - Căn hộ giá rẻ', gia_thue=5000000, dien_tich=85,
+                        trang_thai=ApartmentStatus.DANGTHUE,
+                        id_loai_can_ho=2,
+                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
 
             # Lưu vào session và đẩy xuống DB
-            db.session.add_all([t1, t2, t3, t4, c1, c2, c3, c4, c5])
+            db.session.add_all([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11])
 
             db.session.commit()
 
-            print(">>> THÀNH CÔNG: Đã tạo bảng và thêm 5 căn hộ mẫu và 1 Admin!")
+            print(">>> THÀNH CÔNG: Đã tạo bảng và thêm 10 căn hộ mẫu và 1 Admin!")
         else:
             print(">>> THÔNG BÁO: Dữ liệu đã tồn tại, không thêm mới.")

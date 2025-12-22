@@ -3,7 +3,7 @@ from __init__ import app, login
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
 
-
+import math
 import os
 import utils
 from admin import *
@@ -26,12 +26,13 @@ def index():
 
     loai_canho = utils.load_loai_canho()
 
-
-
+    page = int(request.args.get('page', 1))
     ds_canho = utils.load_canho(kw=request.args.get('keyword'),
-                                loai_canho_id=request.args.get('id_loai_can_ho'))
+                                loai_canho_id=request.args.get('id_loai_can_ho'),
+                                page=page)
 
-    return render_template('index.html', images=images, apartments=ds_canho)
+    return render_template('index.html', images=images, apartments=ds_canho, page=page,
+                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
 
 
 @login.user_loader
@@ -73,13 +74,13 @@ def register_view():
                 name=form.name.data,
                 phone=form.phone.data,
                 username=form.username.data,
-                password= form.password.data
+                password=form.password.data
             )
             return redirect('/login')
         except Exception as ex:
-            err_msg =str(ex)
+            err_msg = str(ex)
 
-    return render_template('register.html',form=form, err_msg=err_msg)
+    return render_template('register.html', form=form, err_msg=err_msg)
 
 
 # ---Đăng xuất

@@ -1,85 +1,201 @@
 {% extends '/layout/base_admin.html' %}
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
 {% endblock %}
 {% block content %}
-            <div class="dashboard-content px-3 pt-4">
-               <h3 class="mb-4">Quản lý Căn hộ</h3>
-
+<div class="dashboard-content px-3 pt-4">
+    <h3 class="mb-4">Quản lý Căn hộ</h3>
     <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách căn hộ</h6>
+        </div>
         <div class="card-body">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Thông tin căn hộ</th>
-                        <th>Loại & Giá</th>
-                        <th>Trạng thái & Người thuê</th>
-                        <th>Hợp đồng/Đặt phòng</th>
-                        <th>Thao tác</th>
-                    </tr>
+            <table class="table  table-hover align-middle">
+                <thead class="table-light text-center">
+                <tr>
+                    <th style="width: 5%;">STT</th>
+                    <th style="width: 15%;">Mã căn</th>
+                    <th style="width: 15%;">Diện tích</th>
+                    <th style="width: 20%;">
+                        <div class="dropdown">
+                            <a class="text-dark text-decoration-none dropdown-toggle fw-bold" href="#" role="button"
+                               data-bs-toggle="dropdown">
+                                {% if current_type_id %}
+                                {% for t in apartment_types %}
+                                {% if t.id|string == current_type_id %}Lọc: {{ t.name }}{% endif %}
+                                {% endfor %}
+                                {% else %}
+                                Loại phòng
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu shadow">
+                                <li>
+                                    <a class="dropdown-item {% if not current_type_id %}active{% endif %}"
+                                       href="{{ url_for('apartments_admin', status=current_status) }}">
+                                        -- Tất cả --
+                                    </a>
+                                </li>
+
+                                {% for t in apartment_types %}
+                                <li>
+                                    <a class="dropdown-item {% if current_type_id == t.id|string %}active{% endif %}"
+                                       href="{{ url_for('apartments_admin', type_id=t.id, status=current_status) }}">
+                                        {{ t.name }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </th>
+                    <th style="width: 25%;">
+                        <div class="dropdown">
+                            <a class="text-dark text-decoration-none dropdown-toggle fw-bold" href="#" role="button"
+                               data-bs-toggle="dropdown">
+                                {% if current_status %}
+                                {% for s in status_list %}
+                                {% if s.value == current_status %}Lọc: {{ s.label }}{% endif %}
+                                {% endfor %}
+                                {% else %}
+                                Tình trạng
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu shadow">
+                                <li>
+                                    <a class="dropdown-item {% if not current_status %}active{% endif %}"
+                                       href="{{ url_for('apartments_admin', type_id=current_type_id) }}">
+                                        -- Tất cả --
+                                    </a>
+                                </li>
+
+                                {% for s in status_list %}
+                                <li>
+                                    <a class="dropdown-item {% if current_status == s.value %}active{% endif %}"
+                                       href="{{ url_for('apartments_admin', status=s.value, type_id=current_type_id) }}">
+                                        {{ s.label }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </th>
+                    <th style="width: 20%;">Thao tác</th>
+                </tr>
                 </thead>
                 <tbody>
-                    {% for a in apartments %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-<!--                                <img src="{{ a.image or url_for('static', filename='images/no-img.jpg') }}" -->
-<!--                                     class="rounded me-3" style="width: 60px; height: 60px; object-fit: cover;">-->
-                                <div>
-                                    <div class="fw-bold text-primary">{{ a.ma_can_ho }}</div>
-                                    <small class="text-muted">{{ a.dien_tich }} m²</small>
-                                </div>
-                            </div>
-                        </td>
+                {% for a in apartments %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
 
-                        <td>
-                            <div class="fw-bold">{{ a.apartment_type.name }}</div>
-                            <div class="text-success">{{ "{:,.0f}".format(a.gia_thue) }} đ</div>
-                        </td>
+                    <td class="fw-bold text-primary">{{ a.ma_can_ho }}</td>
 
-                        <td>
-                            {% if a.hop_dong_hien_tai %}
-                                <span class="badge bg-danger mb-1">Đã cho thuê</span>
-                                <div class="small">
-                                    <i class="bi bi-person"></i>
-                                    {{ a.hop_dong_hien_tai.nguoi_thue_rel.name }}
-                                </div>
+                    <td class="text-center">{{ a.dien_tich }} m²</td>
 
-                            {% elif a.dat_phong_cho_duyet %}
-                                <span class="badge bg-warning text-dark mb-1">Có người đặt</span>
-                                <div class="small fst-italic">
-                                    Chờ duyệt: {{ a.dat_phong_cho_duyet.customer.name }}
-                                </div>
+                    <td>
+                        {% if a.apartment_type %}
+                        {{ a.apartment_type.name }}
+                        {% else %}
+                        <span class="text-muted fst-italic">Chưa phân loại</span>
+                        {% endif %}
+                    </td>
 
-                            {% else %}
-                                <span class="badge bg-success">Đang trống</span>
-                            {% endif %}
-                        </td>
+                    <td class="text-center">
+                        {% if a.hop_dong_hien_tai %}
+                        <span class="badge bg-danger">Đang thuê</span>
+                        <div class="small text-muted mt-1">
+                            {{ a.hop_dong_hien_tai.nguoi_thue_rel.name }}
+                        </div>
 
-                        <td>
-                            {% if a.hop_dong_hien_tai %}
-                                <small class="d-block text-muted">Hết hạn:</small>
-                                <strong>{{ a.hop_dong_hien_tai.thoi_han.strftime('%d/%m/%Y') }}</strong>
-                            {% elif a.dat_phong_cho_duyet %}
-                                <small class="d-block text-muted">Ngày nhận:</small>
-                                <strong>{{ a.dat_phong_cho_duyet.ngay_nhan.strftime('%d/%m/%Y') }}</strong>
-                            {% else %}
-                                --
-                            {% endif %}
-                        </td>
+                        {% elif a.dat_phong_cho_duyet %}
+                        <span class="badge bg-warning text-dark">Có người đặt</span>
 
-                        <td>
-                            <a href="#" class="btn btn-sm btn-outline-primary" title="Chi tiết"><i class="bi bi-eye"></i></a>
-                            {% if a.dat_phong_cho_duyet %}
-                                <a href="#" class="btn btn-sm btn-success" title="Duyệt đặt phòng"><i class="bi bi-check-lg"></i></a>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                        {% elif a.trang_thai|string == 'ApartmentStatus.BAOTRI' %}
+                        <span class="badge bg-secondary">Bảo trì</span>
+
+                        {% else %}
+                        <span class="badge bg-success">Còn trống</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-center">
+                        <button type="button" class="btn btn-sm btn-outline-primary changeApartmentBtn"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editApartmentModal"
+
+                                data-id="{{ a.id }}"
+                                data-ma="{{ a.ma_can_ho }}"
+                                data-dientich="{{ a.dien_tich }}"
+                                data-gia="{{ a.gia_thue }}"
+                                data-type="{{ a.id_loai_can_ho }}"
+                                data-status="{{ a.trang_thai.name }}"><i class="bi bi-pencil-square"></i> Chỉnh sửa
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
                 </tbody>
             </table>
+
+            {% if not apartments %}
+            <div class="text-center py-3 text-muted">
+                Chưa có dữ liệu căn hộ nào.
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+<div class="modal fade" id="editApartmentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa Căn hộ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+
+            <form action="{{ url_for('update_apartment') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="edit_id">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mã căn hộ</label>
+                        <input type="text" class="form-control" name="ma_can_ho" id="edit_ma_can_ho" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Diện tích (m²)</label>
+                            <input type="number" step="1" class="form-control" name="dien_tich" id="edit_dien_tich"
+                                   required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Giá thuê</label>
+                            <input type="number" class="form-control" name="gia_thue" id="edit_gia_thue" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Loại phòng</label>
+                        <select class="form-select" name="type_id" id="edit_type_id">
+                            {% for t in apartment_types %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tình trạng</label>
+                        <select class="form-select" name="status" id="edit_status">
+                            {% for s in status_list %}
+                            <option value="{{ s.value }}">{{ s.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

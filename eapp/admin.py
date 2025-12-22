@@ -2,14 +2,14 @@ import cloudinary.uploader
 import hashlib
 from markupsafe import Markup
 from wtforms import FileField
-from flask import request, render_template
+from flask import request, render_template, flash
 from flask_admin import Admin, BaseView, expose
 from flask_admin._types import T_ORM_MODEL
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from flask import redirect
 from wtforms import Form
-from eapp.utils import admin_required
+from eapp.utils import *
 from sqlalchemy.orm import joinedload
 
 from __init__ import app, db
@@ -24,11 +24,71 @@ def admin_index():
 @app.route('/admin/apartments_admin')
 @admin_required  # <--- Gắn cái này vào
 def apartments_admin():
-    # Logic lấy danh sách căn hộ...
-    apartments = CanHo.query.options(joinedload(CanHo.apartment_type)).all()
-    print(apartments)
-    return render_template('admin/apartments_admin.html', apartments=apartments)
+    selected_type_id = request.args.get('type_id')
+    selected_status = request.args.get('status')
 
+    # Logic lấy danh sách căn hộ...
+    query = CanHo.query.options(joinedload(CanHo.apartment_type))
+    apartment_types = LoaiCanHo.query.all()
+    status_list = [
+        {'value': 'CONTRONG', 'label': 'Còn trống'},
+        {'value': 'DANGTHUE', 'label': 'Đang thuê'},
+        {'value': 'BAOTRI', 'label': 'Bảo trì'}
+        # Thêm 'DATCOC' nếu có
+    ]
+
+    if selected_type_id:
+        query = query.filter(CanHo.id_loai_can_ho == int(selected_type_id))
+
+    if selected_status:
+        query = query.filter(CanHo.trang_thai == str(selected_status))
+
+    apartments = query.all()
+
+
+
+    return render_template('admin/apartments_admin.html',
+                           apartments=apartments,
+                           apartment_types=apartment_types,
+                           status_list=status_list,
+                           current_type_id=selected_type_id,
+                           current_status=selected_status)
+
+
+@app.route('/admin/apartments_admin', methods=['POST'])
+@admin_required
+def update_apartment():
+    # 1. Lấy dữ liệu từ form
+    apartment_id = request.form.get('id')
+    ma_can_ho = request.form.get('ma_can_ho')
+    dien_tich = request.form.get('dien_tich')
+    gia_thue = request.form.get('gia_thue')
+    type_id = request.form.get('type_id')
+    status = request.form.get('status')
+
+    # 2. Tìm căn hộ trong DB
+    can_ho = CanHo.query.get(apartment_id)
+
+    if can_ho:
+        try:
+            # 3. Cập nhật thông tin
+            can_ho.ma_can_ho = ma_can_ho
+            can_ho.dien_tich = float(dien_tich)
+            can_ho.gia_thue = float(gia_thue)
+            can_ho.id_loai_can_ho = int(type_id)
+            can_ho.trang_thai = status  # SQLAlchemy tự map chuỗi sang Enum nếu khớp tên
+
+            # 4. Lưu vào DB
+            db.session.commit()
+            flash('Cập nhật thành công!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Lỗi cập nhật: {str(e)}', 'danger')
+    else:
+        flash('Không tìm thấy căn hộ!', 'danger')
+
+    # 5. Quay lại trang danh sách (giữ lại các tham số lọc nếu muốn - phần nâng cao)
+    return redirect(url_for('apartments_admin'))
 admin = Admin(app=app, name='QUẢN LÝ CHUNG CƯ')
 
 

@@ -9,16 +9,18 @@ from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user, logout_user
 from flask import redirect
 from wtforms import Form
-from eapp.utils import *
+from utils import *
 from sqlalchemy.orm import joinedload
 
 from __init__ import app, db
 from models import CanHo, Account, HopDong, QuyDinh
 
+
 @app.route('/admin')
 @admin_required  # <--- Gắn cái này vào
 def admin_index():
     return render_template('admin/index.html')
+
 
 # Route quản lý căn hộ
 @app.route('/admin/apartments_admin')
@@ -44,8 +46,6 @@ def apartments_admin():
         query = query.filter(CanHo.trang_thai == str(selected_status))
 
     apartments = query.all()
-
-
 
     return render_template('admin/apartments_admin.html',
                            apartments=apartments,
@@ -89,10 +89,66 @@ def update_apartment():
 
     # 5. Quay lại trang danh sách (giữ lại các tham số lọc nếu muốn - phần nâng cao)
     return redirect(url_for('apartments_admin'))
+
+
 admin = Admin(app=app, name='QUẢN LÝ CHUNG CƯ')
 
 
-#T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
+@app.route('/admin/regulations')
+@admin_required
+def regulations_admin():
+    print(">>> ĐANG CHẠY HÀM REGULATIONS_ADMIN...")
+    qd = QuyDinh.query.first()
+    if qd:
+        print(f">>> CÓ DỮ LIỆU TRONG DB! ID={qd.id}")
+        print(f">>> Giá điện: {qd.gia_dien}, Giá nước: {qd.gia_nuoc}")
+    else:
+        print(">>> KHÔNG TÌM THẤY DỮ LIỆU (qd is None)")
+        # Tự động tạo nếu không có
+        qd = QuyDinh(gia_dien=3500, gia_nuoc=20000, phi_dich_vu=150000, so_nguoi_thue_toi_da=4)
+        db.session.add(qd)
+        db.session.commit()
+        print(">>> ĐÃ TẠO MỚI DỮ LIỆU THÀNH CÔNG!")
+    # if not qd:
+    #     return render_template('admin/regulations_admin.html', regulations=[])
+    #     # qd = QuyDinh(gia_dien=3500, gia_nuoc=20000, so_nguoi_thue_toi_da=4, phi_dich_vu=150000)
+    #     # db.session.add(qd)
+    #     # db.session.commit()
+    #     # print("Đã khởi tạo dữ liệu Quy định mặc định!")
+
+    regulations_list = [
+        {'key': 'gia_dien', 'name': 'Đơn giá Điện (vnđ/kWh)', 'value': qd.gia_dien},
+        {'key': 'gia_nuoc', 'name': 'Đơn giá Nước (vnđ/m3)', 'value': qd.gia_nuoc},
+        {'key': 'so_nguoi_thue_toi_da', 'name': 'Số người thuê tối đa / phòng', 'value': qd.so_nguoi_thue_toi_da},
+        {'key': 'phi_dich_vu', 'name': 'Phí Dịch vụ (vnđ/tháng)', 'value': qd.phi_dich_vu}
+    ]
+
+
+    print(f">>> LIST TRẢ VỀ HTML CÓ {len(regulations_list)} DÒNG.")
+
+
+    return render_template('admin/regulations_admin.html', regulations_list=regulations_list)
+
+
+@app.route('/admin/regulations/update', methods=['POST'])
+@admin_required
+def update_regulation():
+    column_name = request.form.get('id')
+    new_value = request.form.get('value')
+
+    if column_name and new_value:
+        try:
+            qd = QuyDinh.query.first()
+            if qd and hasattr(qd, column_name):
+                setattr(qd, column_name, float(new_value))
+                db.session.commit()
+                print("Cập nhật thành công!")
+        except Exception as e:
+            print(f"Lỗi cập nhật: {e}")
+
+    return redirect(url_for('regulations_admin'))
+
+# T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
 
 # class AuthenticatedModelView(ModelView):
 #     def is_accessible(self):
@@ -127,12 +183,6 @@ admin = Admin(app=app, name='QUẢN LÝ CHUNG CƯ')
 #
 #     def is_accessible(self):
 #         return current_user.is_authenticated
-
-
-
-
-
-
 
 
 # class CanHoView(AuthenticatedModelView):

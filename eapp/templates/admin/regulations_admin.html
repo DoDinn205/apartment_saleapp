@@ -1,0 +1,115 @@
+{% extends '/layout/base_admin.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content px-3 pt-4">
+    <h3 class="mb-4">Quản lý Quy định</h3>
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách quy định & Đơn giá</h6>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width: 10%;">STT</th>
+                        <th style="width: 35%;">Tên quy định</th>
+                        <th style="width: 20%;">Mã (Key)</th>
+                        <th style="width: 20%;">Giá trị hiện tại</th>
+                        <th style="width: 15%;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in regulations_list %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+
+                        <td class="fw-bold text-primary">{{ r['name'] }}</td>
+
+                        <td class="text-center text-muted fst-italic">{{ r['key'] }}</td>
+
+                        <td class="text-center fw-bold text-danger">
+                            {{ "{:,.0f}".format(r['value']) }}
+                        </td>
+
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-primary editRegulationBtn"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editRegulationModal"
+                                    data-id="{{ r['key'] }}"
+                                    data-desc="{{ r['name'] }}"
+                                    data-value="{{ r['value'] }}">
+                                <i class="bi bi-pencil-square"></i> Chỉnh sửa
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if not regulations_list %}
+                    <tr>
+                        <td colspan="5" class="text-center py-3 text-muted">
+                            Chưa có dữ liệu quy định.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editRegulationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cập nhật Quy định</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{{ url_for('update_regulation') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="edit_reg_id">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên quy định</label>
+                        <input type="text" class="form-control bg-light" id="edit_reg_desc" disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Giá trị mới</label>
+                        <input type="number" step="any" class="form-control" name="value" id="edit_reg_value" required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editBtns = document.querySelectorAll('.editRegulationBtn');
+
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                // Lấy dữ liệu từ data-attributes của nút bấm
+                const id = this.getAttribute('data-id');      // Ví dụ: gia_dien
+                const desc = this.getAttribute('data-desc');  // Ví dụ: Đơn giá Điện
+                const value = this.getAttribute('data-value');// Ví dụ: 3500.0
+
+                // Điền dữ liệu vào các ô input trong Modal
+                document.getElementById('edit_reg_id').value = id;
+                document.getElementById('edit_reg_desc').value = desc;
+                document.getElementById('edit_reg_value').value = value;
+            });
+        });
+    });
+</script>
+{% endblock %}

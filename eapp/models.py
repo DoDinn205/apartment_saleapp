@@ -214,8 +214,11 @@ if __name__ == '__main__':
             # Lưu vào session và đẩy xuống DB
             db.session.add_all([c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11])
 
+            qd = QuyDinh(gia_dien=3500, gia_nuoc=20000, so_nguoi_thue_toi_da=4, phi_dich_vu=150000)
+            db.session.add(qd)
+
             db.session.commit()
 
-            print(">>> THÀNH CÔNG: Đã tạo bảng và thêm 10 căn hộ mẫu và 1 Admin!")
+            print(">>> THÀNH CÔNG: Đã tạo bảng và thêm 10 căn hộ mẫu và 1 Admin và 1 Quy định mặc định!")
         else:
             print(">>> THÔNG BÁO: Dữ liệu đã tồn tại, không thêm mới.")

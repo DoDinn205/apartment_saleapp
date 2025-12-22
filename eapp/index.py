@@ -13,16 +13,7 @@ from utils import check_login
 
 @app.route('/')
 def index():
-    image = []
-    try:
-        img_folder = os.path.join(app.static_folder, 'images/banner')
-        if os.path.exists(img_folder):
-            images = [
-                'images/banner/' + img for img in os.listdir(img_folder)
-                if img.lower().endswith(('.jpg', '.png', '.jpeg', '.gif'))
-            ]
-    except Exception as e:
-        print(f"Lỗi load banner: {e}")
+
 
     loai_canho = utils.load_loai_canho()
 
@@ -31,7 +22,7 @@ def index():
                                 loai_canho_id=request.args.get('id_loai_can_ho'),
                                 page=page)
 
-    return render_template('index.html', images=images, apartments=ds_canho, page=page,
+    return render_template('index.html', apartments=ds_canho, page=page,
                            pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
 
 
@@ -129,24 +120,39 @@ def booking_process():
         canho_id = request.form.get('apartment_id')
         ngay_nhan = request.form.get('start_date')
         thoi_han = request.form.get('duration')
+        page = 1
 
         if utils.add_booking(current_user.id, canho_id, ngay_nhan, thoi_han):
             ds_canho = utils.load_canho(canho_id)
             msg = 'Bạn đã đặt phòng thành công. Chúng tôi sẽ liên hệ bạn sớm!'
-            return render_template('index.html', apartments=ds_canho, success_msg=msg)
+            return render_template('index.html', apartments=ds_canho, success_msg=msg,page=page,
+                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
         else:
             ds_canho = utils.load_canho(canho_id)
             err = 'Có lỗi xảy ra. Vui lòng thử lại sau!'
-            return render_template('index.html', apartments=ds_canho, err_msg=err)
+            return render_template('index.html', apartments=ds_canho, err_msg=err,page=page,
+                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
     except Exception as ex:
         ds_canho = utils.load_canho(canho_id)
-        return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}')
+        return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}',page=page,
+                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
 
 
 @app.context_processor
 def common_response():
+    image = []
+    try:
+        img_folder = os.path.join(app.static_folder, 'images/banner')
+        if os.path.exists(img_folder):
+            images = [
+                'images/banner/' + img for img in os.listdir(img_folder)
+                if img.lower().endswith(('.jpg', '.png', '.jpeg', '.gif'))
+            ]
+    except Exception as e:
+        print(f"Lỗi load banner: {e}")
     return {
-        'loai_canho': utils.load_loai_canho()
+        'loai_canho': utils.load_loai_canho(),
+        'images':images
     }
 
 

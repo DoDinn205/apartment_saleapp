@@ -15,7 +15,7 @@
 
                     <!-- Họ tên -->
                     <div class="form-group">
-                        {{ form.name.label(class="small mb-1") }}
+                        {{ form.name.label(class="small mb-1") }} <span class="text text-danger">*</span>
                         {{ form.name(class="form-control py-4", placeholder="Nhập họ tên...") }}
 
                         {% if form.name.errors %}
@@ -27,7 +27,7 @@
 
                     <!--Phone number-->
                     <div class="form-group mt-1">
-                        {{ form.phone.label(class="small mb-1") }}
+                        {{ form.phone.label(class="small mb-1") }}<span class="text text-danger">*</span>
                         {{ form.phone(class="form-control py-4", placeholder="Nhập số điện thoại...") }}
 
                         {% if form.phone.errors %}
@@ -39,7 +39,7 @@
 
                     <!-- Username -->
                     <div class="form-group mt-1">
-                        {{ form.username.label(class="small mb-1") }}
+                        {{ form.username.label(class="small mb-1") }}<span class="text text-danger">*</span>
                         {{ form.username(class="form-control py-4", placeholder="Nhập tên đăng nhập...") }}
 
                         {% if form.username.errors %}
@@ -52,7 +52,7 @@
                     <!-- Password và Confirm -->
 
                     <div class="form-group mt-1">
-                        {{ form.password.label(class="small mb-1") }}
+                        {{ form.password.label(class="small mb-1") }}<span class="text text-danger">*</span>
                         {{ form.password(class="form-control py-4", placeholder="Nhập mật khẩu...") }}
 
                         {% if form.password.errors %}
@@ -64,7 +64,7 @@
 
 
                     <div class="form-group mt-1">
-                        {{ form.confirm.label(class="small mb-1") }}
+                        {{ form.confirm.label(class="small mb-1") }}<span class="text text-danger">*</span>
                         {{ form.confirm(class="form-control py-4", placeholder="Nhập lại mật khẩu...") }}
 
                         {% if form.confirm.errors %}
@@ -74,6 +74,10 @@
                         {% endif %}
                     </div>
 
+                    <div class="form-group mt-1">
+                        {{ form.avatar.label(class="small mb-1") }}
+                        {{ form.avatar(class="form-control") }}
+                    </div>
 
                     <!-- Submit -->
                     <div class="form-group mt-4 mb-0 text-center">

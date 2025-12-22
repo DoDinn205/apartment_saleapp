@@ -32,6 +32,7 @@ class Account(BaseModel, UserMixin):
     username = Column(String(50), nullable=False, unique=True)
     password = Column(String(50), nullable=False)
     name = Column(String(50), nullable=False)
+    avatar = Column(String(100), default='https://velle.vn/wp-content/uploads/2025/04/avatar-mac-dinh-4-2.jpg')
     # Một tài khoản chỉ có 1 sdt
     phone = relationship('PhoneNumber', backref='account', lazy=True, uselist=False)
     # Cột này để phân bệt loại tài khoản (Admin hay Customer)
@@ -94,6 +95,7 @@ class CanHo(BaseModel):
     image = Column(String(255), nullable=True)
     id_loai_can_ho = Column(Integer, ForeignKey(LoaiCanHo.id), nullable=False)
 
+    dat_phong = relationship('DatPhong', backref='can_ho', lazy=True)
     def __str__(self):
         return self.ma_can_ho
 
@@ -164,11 +166,11 @@ if __name__ == '__main__':
         db.session.add_all([t1, t2, t3, t4])
 
         if CanHo.query.count() == 0:
-            c1 = CanHo(ma_can_ho='P101 - Studio', gia_thue=4500000, dien_tich=30,
+            c1 = CanHo(ma_can_ho='P101 - Studio', gia_thue=2000000, dien_tich=30,
                        trang_thai=ApartmentStatus.CONTRONG,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg",
                        id_loai_can_ho=1)
-            c2 = CanHo(ma_can_ho='P205 - View Phố', gia_thue=7000000, dien_tich=55,
+            c2 = CanHo(ma_can_ho='P205 - View Phố', gia_thue=6000000, dien_tich=55,
                        trang_thai=ApartmentStatus.DANGTHUE,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg",
                        id_loai_can_ho=2)
@@ -180,15 +182,15 @@ if __name__ == '__main__':
                        trang_thai=ApartmentStatus.CONTRONG,
                        id_loai_can_ho=4,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c5 = CanHo(ma_can_ho='P105 - Gác xép', gia_thue=3500000, dien_tich=25,
+            c5 = CanHo(ma_can_ho='P105 - Gác xép', gia_thue=2500000, dien_tich=25,
                        trang_thai=ApartmentStatus.CONTRONG,
                        id_loai_can_ho=1,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c6 = CanHo(ma_can_ho='P106 - Gác lửng', gia_thue=4500000, dien_tich=30,
+            c6 = CanHo(ma_can_ho='P106 - Gác lửng', gia_thue=3000000, dien_tich=30,
                        trang_thai=ApartmentStatus.CONTRONG,
                        id_loai_can_ho=1,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c7 = CanHo(ma_can_ho='P206 - Căn hộ cao cấp', gia_thue=10000000, dien_tich=90,
+            c7 = CanHo(ma_can_ho='P206 - Căn hộ cao cấp', gia_thue=7000000, dien_tich=90,
                        trang_thai=ApartmentStatus.DANGTHUE,
                        id_loai_can_ho=2,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
@@ -196,7 +198,7 @@ if __name__ == '__main__':
                        trang_thai=ApartmentStatus.BAOTRI,
                        id_loai_can_ho=3,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")
-            c9 = CanHo(ma_can_ho='P403 - Căn hộ full nội thất', gia_thue=30000000, dien_tich=100,
+            c9 = CanHo(ma_can_ho='P403 - Căn hộ full nội thất', gia_thue=10000000, dien_tich=100,
                        trang_thai=ApartmentStatus.CONTRONG,
                        id_loai_can_ho=4,
                        image="https://decoxdesign.com/upload/images/thiet-ke-noi-that-chung-cu-70m2-01-decox-design.jpg")

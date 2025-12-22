@@ -1,6 +1,7 @@
 import hashlib
 from datetime import datetime
 
+import cloudinary.uploader
 from sqlalchemy.exc import IntegrityError
 
 from models import Account, Customer, CanHo, DatPhong, LoaiCanHo, PhoneNumber
@@ -50,7 +51,7 @@ def check_login(username, password):
     return None
 
 
-def add_user(name, phone, username, password):
+def add_user(name,avatar, phone, username, password):
     password = str(password.strip())
     password_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
 
@@ -59,6 +60,10 @@ def add_user(name, phone, username, password):
                     username=username.strip(),
                     password=password_hash,
                     user_type='customer')
+
+    if avatar:
+        res = cloudinary.uploader.upload(avatar)
+        user.avatar = res.get('secure_url')
 
     db.session.add(user)
     try:

@@ -7,7 +7,7 @@ import math
 import os
 import utils
 from admin import *
-from forms import RegisterForm
+from forms import RegisterForm, AvatarForm
 from utils import check_login
 
 
@@ -64,7 +64,7 @@ def login_view():
 
 
 # ---Đăng ký
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/register', methods=['get', 'post'])
 def register_view():
     form = RegisterForm()
     err_msg = None
@@ -74,13 +74,37 @@ def register_view():
                 name=form.name.data,
                 phone=form.phone.data,
                 username=form.username.data,
-                password=form.password.data
+                password=form.password.data,
+                avatar=form.avatar.data
             )
             return redirect('/login')
         except Exception as ex:
             err_msg = str(ex)
 
     return render_template('register.html', form=form, err_msg=err_msg)
+
+
+# ---Thông tin tài khoản
+@app.route('/info_account', methods=['get', 'post'])
+@login_required
+def info_account_view():
+    form = AvatarForm()
+    if form.validate_on_submit() and form.avatar.data:
+        try:
+            res = cloudinary.uploader.upload(
+                form.avatar.data,
+                overwrite=True
+            )
+
+            current_user.avatar = res.get('secure_url')
+            db.session.commit()
+
+        except Exception as ex:
+            print("Lỗi upload avatar:", str(ex))
+
+        return redirect('/info_account')
+
+    return render_template('info_account.html', form=form)
 
 
 # ---Đăng xuất

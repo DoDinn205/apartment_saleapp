@@ -21,3 +21,11 @@ body{
 .text-gradient{
     color: linear-gradient(135deg, #30cfd0, #330867);
 }
+
+.border-gradient{
+    border-color:linear-gradient(135deg, #30cfd0, #330867);
+}
+
+.effect:hover{
+    opacity: 0.7
+}

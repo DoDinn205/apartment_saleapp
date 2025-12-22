@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from flask_wtf.file import FileAllowed
+from wtforms import StringField, PasswordField, SubmitField, FileField
 from wtforms.validators import DataRequired, Length, EqualTo
 
 
@@ -27,4 +28,21 @@ class RegisterForm(FlaskForm):
         validators=[DataRequired(), EqualTo('password', message='Mật khẩu không khớp')]
     )
 
+    avatar = FileField(
+        'Avatar',
+        validators=[
+            FileAllowed(['jpg', 'png', 'jpeg'], 'Chỉ cho phép ảnh!')
+        ]
+    )
+
     submit = SubmitField('Đăng ký')
+
+class AvatarForm(FlaskForm):
+    avatar = FileField(
+        'Avatar',
+        validators=[
+            FileAllowed(['jpg', 'png', 'jpeg'], 'Chỉ cho phép ảnh!')
+        ]
+    )
+
+    submit = SubmitField('Cập nhật')

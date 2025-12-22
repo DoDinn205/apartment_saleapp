@@ -8,11 +8,6 @@
                 <h3 class="font-weight-light my-2">ĐĂNG NHẬP</h3>
             </div>
             <div class="card-body">
-                {% if err_msg %}
-                <div class="alert alert-danger text-center">
-                    {{ err_msg }}
-                </div>
-                {% endif %}
 
                 <form method="post" action="/login" autocomplete="off">
                     <div class="form-group">

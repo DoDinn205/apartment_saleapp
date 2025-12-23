@@ -104,13 +104,28 @@ class HopDong(BaseModel):
     __tablename__ = "hop_dong"
 
     ngay_ky = Column(DATETIME, nullable=False)
-    thoi_han = Column(DATETIME, nullable=False)
+    ngay_tra = Column(DATETIME, nullable=False)
     gia_thue = Column(Float, nullable=False)
     tien_coc = Column(Float, nullable=False)
 
     id_quan_ly = Column(Integer, ForeignKey('admin.user_id'), nullable=False)
     id_nguoi_thue = Column(Integer, ForeignKey('customer.user_id'), nullable=False)
     id_can_ho = Column(Integer, ForeignKey('can_ho.id'), nullable=False)
+
+    khach_hang = relationship('Customer', foreign_keys=[id_nguoi_thue], lazy=True)
+    can_ho = relationship('CanHo', foreign_keys=[id_can_ho], lazy=True)
+
+    @property
+    def so_ngay_thue(self):
+        if self.ngay_tra and self.ngay_ky:
+            delta = self.ngay_tra - self.ngay_ky
+            return delta.days
+        return 0
+
+    # THÊM PROPERTY: Kiểm tra xem đã hết hạn chưa (để tô màu giao diện)
+    @property
+    def is_expired(self):
+        return datetime.now() > self.ngay_tra
 
     def __str__(self):
         return str(self.id)

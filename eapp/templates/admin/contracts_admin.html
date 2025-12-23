@@ -1,0 +1,247 @@
+{% extends '/layout/base_admin.html' %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+{% block content %}
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between">
+        <h3 class="mb-4">Quản lý hợp đồng</h3>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createContractModal">
+            <i class="bi bi-plus-lg"></i> Tạo hợp đồng mới
+        </button>
+
+        <div class="modal fade" id="createContractModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <form action="{{ url_for('create_contract') }}" method="POST">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">Soạn thảo Hợp đồng thuê</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <h6 class="text-primary fw-bold mb-3"><i class="bi bi-house"></i> Thông tin thuê</h6>
+                            <div class="row mb-3">
+
+                                <div class="col-md-12">
+                                    <label class="form-label">Chọn Căn hộ (Chỉ hiện phòng trống)</label>
+                                    <select class="form-select" name="ma_can_ho" required>
+                                        <option value="">-- Chọn phòng --</option>
+                                        {% for room in empty_rooms %}
+                                        <option value="{{ room.ma_can_ho }}">
+                                            {{ room.ma_can_ho }} - {{ "{:,.0f}".format(room.gia_thue) }}đ
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Ngày ký</label>
+                                    <input type="date" class="form-control" name="ngay_ky" value="{{ now_date }}"
+                                           required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Ngày trả (Hết hạn)</label>
+                                    <input type="date" class="form-control" name="ngay_tra" required>
+                                </div>
+
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Giá chốt thuê</label>
+                                    <input type="number" class="form-control" name="gia_thue" placeholder="Nhập giá..."
+                                           required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tiền cọc</label>
+                                    <input type="number" class="form-control" name="tien_coc" placeholder="Nhập cọc..."
+                                           required>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <h6 class="text-primary fw-bold mb-3"><i class="bi bi-person"></i> Thông tin người thuê</h6>
+
+                            <div class="mb-3">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="customer_option"
+                                           id="opt_existing" value="existing" checked>
+                                    <label class="form-check-label" for="opt_existing">Chọn người dùng có sẵn</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="customer_option" id="opt_new"
+                                           value="new">
+                                    <label class="form-check-label" for="opt_new">Tạo người dùng mới (Chưa có
+                                        tài khoản)</label>
+                                </div>
+                            </div>
+
+                            <div id="section_existing_customer">
+                                <select class="form-select" name="customer_id">
+                                    <option value="">-- Tìm người dùng --</option>
+                                    {% for cus in customers %}
+                                    <option value="{{ cus.user_id }}">{{ cus.name }} ({{ cus.username }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div id="section_new_customer" style="display: none;">
+                                <div class="card bg-light border-0">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Họ và tên</label>
+                                                <input type="text" class="form-control" name="new_name"
+                                                       placeholder="Nguyễn Văn A">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Số điện thoại (Sẽ là Tên đăng nhập)</label>
+                                                <input type="text" class="form-control" name="new_phone"
+                                                       placeholder="09xxxxxxx">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted fst-italic mt-2 d-block">
+                                            * Hệ thống sẽ tự tạo tài khoản với Mật khẩu mặc định là:
+                                            <strong>123456</strong>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                            <button type="submit" class="btn btn-primary">Lưu và Tạo Hợp đồng</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-light text-center">
+            <tr>
+                <th>Mã HĐ</th>
+                <th>Căn hộ</th>
+                <th>Người thuê</th>
+                <th>Ngày ký</th>
+                <th>Ngày trả</th>
+                <th>Thời hạn</th>
+                <th>Thao tác</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for c in contracts %}
+            <tr class="{% if c.is_expired %}table-secondary text-muted{% endif %}">
+
+                <td class="fw-bold text-center text-primary">
+                    HD-{{ "%04d" | format(c.id) }}
+                </td>
+
+                <td>{{ c.can_ho.ma_can_ho }}</td>
+
+                <td>
+                    <div class="fw-bold">{{ c.khach_hang.name }}</div>
+                </td>
+
+                <td class="text-center">{{ c.ngay_ky.strftime('%d/%m/%Y') }}</td>
+
+                <td class="text-center">
+                    {{ c.ngay_tra.strftime('%d/%m/%Y') }}
+                    {% if c.is_expired %}
+                    <br><small class="text-danger fst-italic">(Đã quá hạn)</small>
+                    {% endif %}
+                </td>
+
+                <td class="text-center fw-bold text-primary">
+                    {{ c.so_ngay_thue }} ngày
+                </td>
+
+                <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-success extendBtn"
+                                    data-bs-toggle="modal" data-bs-target="#extendModal"
+                                    data-id="{{ c.id }}"
+                                    data-old-date="{{ c.ngay_tra.strftime('%Y-%m-%d') }}">
+                                <i class="bi bi-calendar-plus"></i> Gia hạn
+                            </button>
+
+                            <button type="button" class="btn btn-sm btn-danger cancelBtn"
+                                    data-bs-toggle="modal" data-bs-target="#cancelModal"
+                                    data-id="{{ c.id }}">
+                                <i class="bi bi-x-circle"></i> Hủy
+                            </button>
+                        </div>
+                    </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="extendModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('extend_contract') }}" method="POST">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Gia hạn hợp đồng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ma_hop_dong" id="extend_id">
+                    <div class="mb-3">
+                        <label class="form-label">Ngày trả hiện tại</label>
+                        <input type="date" class="form-control" id="current_date" disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chọn ngày trả mới</label>
+                        <input type="date" class="form-control" name="new_date" required min="{{ now }}">
+                        <small class="text-muted">Ngày mới phải lớn hơn ngày hiện tại.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Xác nhận gia hạn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('cancel_contract') }}" method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Xác nhận hủy hợp đồng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ma_hop_dong" id="cancel_id">
+                    <p class="fs-5">Bạn có chắc chắn muốn hủy hợp đồng <b id="display_cancel_id"></b>?</p>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Hành động này sẽ xóa hợp đồng hoặc kết thúc hiệu lực ngay lập tức.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
+                    <button type="submit" class="btn btn-danger">Đồng ý Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script src="{{ url_for('static', filename='js/contracts_admin.js') }}"></script>
+{% endblock %}

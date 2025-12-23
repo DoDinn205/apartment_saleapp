@@ -13,18 +13,18 @@ from utils import *
 from sqlalchemy.orm import joinedload
 
 from __init__ import app, db
-from models import CanHo, Account, HopDong, QuyDinh
+from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus
 
 
 @app.route('/admin')
-@admin_required  # <--- Gắn cái này vào
+@admin_required
 def admin_index():
     return render_template('admin/index.html')
 
 
 # Route quản lý căn hộ
 @app.route('/admin/apartments_admin')
-@admin_required  # <--- Gắn cái này vào
+@admin_required
 def apartments_admin():
     selected_type_id = request.args.get('type_id')
     selected_status = request.args.get('status')
@@ -147,6 +147,173 @@ def update_regulation():
             print(f"Lỗi cập nhật: {e}")
 
     return redirect(url_for('regulations_admin'))
+
+
+@app.route('/admin/contracts')
+@admin_required
+def contracts_admin():
+    contracts = HopDong.query.options(
+        joinedload(HopDong.khach_hang),
+        joinedload(HopDong.can_ho)
+    ).order_by(HopDong.ngay_ky.desc()).all()
+
+    customers = Customer.query.all()
+
+    # Lấy danh sách phòng TRỐNG để chọn
+    empty_rooms = CanHo.query.filter_by(trang_thai=ApartmentStatus.CONTRONG).all()
+
+    return render_template('admin/contracts_admin.html',
+                           contracts=contracts,
+                           customers=customers,
+                           empty_rooms=empty_rooms,
+                           now_date=datetime.now().strftime('%Y-%m-%d'))
+
+
+
+@app.route('/admin/contracts/create', methods=['POST'])
+@admin_required
+def create_contract():
+    # --- 1. LẤY DỮ LIỆU TỪ FORM ---
+    ma_can_ho_str = request.form.get('ma_can_ho')  # Đây là Mã hiển thị (VD: P101)
+
+    # Xử lý ngày tháng (HTML date input trả về chuỗi YYYY-MM-DD)
+    try:
+        ngay_ky = datetime.strptime(request.form.get('ngay_ky'), '%Y-%m-%d')
+        ngay_tra = datetime.strptime(request.form.get('ngay_tra'), '%Y-%m-%d')
+    except ValueError:
+        flash('Định dạng ngày tháng không hợp lệ!', 'danger')
+        return redirect(url_for('contract_list'))
+
+    try:
+        gia_thue = float(request.form.get('gia_thue'))
+        tien_coc = float(request.form.get('tien_coc'))
+    except ValueError:
+        flash('Giá thuê hoặc tiền cọc phải là số!', 'danger')
+        return redirect(url_for('contract_list'))
+
+    # --- 2. XỬ LÝ NGƯỜI THUÊ ---
+    option = request.form.get('customer_option')
+    customer_obj = None
+
+    try:
+        if option == 'existing':
+            cus_id_input = request.form.get('customer_id')
+            customer_obj = Customer.query.get(cus_id_input)
+
+            if not customer_obj:
+                flash('Khách hàng đã chọn không tồn tại!', 'danger')
+                return redirect(url_for('contract_list'))
+
+        elif option == 'new':
+            name = request.form.get('new_name')
+            phone_str = request.form.get('new_phone')
+
+            # Kiểm tra trùng Username (Username là SĐT)
+            if Account.query.filter_by(username=phone_str).first():
+                flash(f'Tài khoản/SĐT {phone_str} đã tồn tại trong hệ thống!', 'danger')
+                return redirect(url_for('contract_list'))
+
+            # Kiểm tra trùng trong bảng PhoneNumber (cho chắc chắn)
+            if PhoneNumber.query.filter_by(phone=phone_str).first():
+                flash(f'Số điện thoại {phone_str} đã được liên kết với tài khoản khác!', 'danger')
+                return redirect(url_for('contract_list'))
+
+            # Tạo Customer Mới (Account)
+            default_pass = hashlib.md5("123456".encode('utf-8')).hexdigest()
+            new_customer = Customer(
+                username=phone_str,  # Username = SĐT
+                password=default_pass,
+                name=name,
+                user_type='customer',
+                is_renting=True,  # Đánh dấu là đang thuê
+            )
+
+            db.session.add(new_customer)
+            db.session.flush()  # Đẩy tạm vào DB để sinh ra new_customer.id (Integer)
+
+            # Tạo PhoneNumber Mới (Liên kết với Customer vừa tạo)
+            new_phone = PhoneNumber(
+                phone=phone_str,
+                user_id=new_customer.id  # Lấy ID vừa flush
+            )
+            db.session.add(new_phone)
+
+            # Gán đối tượng vừa tạo vào biến chung
+            customer_obj = new_customer
+
+            flash(f'Đã tạo tài khoản mới cho {name}. Mật khẩu: 123456', 'info')
+
+        # --- 3. TẠO HỢP ĐỒNG ---
+        # Tìm đối tượng Căn hộ dựa trên Mã căn hộ (String)
+        room_obj = CanHo.query.filter_by(ma_can_ho=ma_can_ho_str).first()
+
+        if not room_obj:
+            flash(f'Căn hộ {ma_can_ho_str} không tồn tại!', 'danger')
+            return redirect(url_for('contract_list'))
+
+
+        # Khởi tạo Hợp đồng
+        new_hd = HopDong(
+            ngay_ky=ngay_ky,
+            ngay_tra=ngay_tra,
+            gia_thue=gia_thue,
+            tien_coc=tien_coc,
+
+            id_quan_ly=current_user.id,
+            id_nguoi_thue=customer_obj.id,
+            id_can_ho=room_obj.id
+        )
+
+        # --- 4. CẬP NHẬT TRẠNG THÁI ---
+        # Cập nhật trạng thái phòng -> Đã thuê
+        room_obj.trang_thai = ApartmentStatus.DANGTHUE
+
+        # Cập nhật trạng thái người dùng (nếu chọn người cũ chưa thuê)
+        customer_obj.is_renting = True
+
+        db.session.add(new_hd)
+        db.session.commit()
+
+        flash('Tạo hợp đồng thành công!', 'success')
+
+    except Exception as e:
+        db.session.rollback()  # Hoàn tác nếu có lỗi
+        print(f"Error: {str(e)}")  # In lỗi ra console để debug
+        flash(f'Đã xảy ra lỗi: {str(e)}', 'danger')
+
+    return redirect(url_for('contracts_admin'))
+
+
+@app.route('/admin/contracts/extend', methods=['POST'])
+@admin_required
+def extend_contract():
+    ma_hd = request.form.get('ma_hop_dong')
+    new_date_str = request.form.get('new_date')
+    contract = HopDong.query.get(ma_hd)
+    if contract and new_date_str:
+        # Chuyển string sang datetime
+        contract.ngay_tra = datetime.strptime(new_date_str, '%Y-%m-%d')
+        db.session.commit()
+        flash('Gia hạn thành công!', 'success')
+    else:
+        flash('Lỗi khi gia hạn!', 'danger')
+
+    return redirect(url_for('contracts_admin'))
+
+
+@app.route('/admin/contracts/cancel', methods=['POST'])
+@admin_required
+def cancel_contract():
+    ma_hd = request.form.get('ma_hop_dong')
+    contract = HopDong.query.get(ma_hd)
+
+    if contract:
+        db.session.delete(contract)
+
+        db.session.commit()
+        flash('Đã hủy hợp đồng thành công!', 'success')
+
+    return redirect(url_for('contracts_admin'))
 
 # T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
 

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thanh toán MoMo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f4f6f8; }
+        .momo-card {
+            max-width: 400px;
+            margin: 50px auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        .header {
+            background-color: #a50064; /* Màu hồng MoMo */
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .qr-area {
+            text-align: center;
+            padding: 20px;
+            background: #fff;
+        }
+        .qr-img {
+            width: 180px;
+            height: 180px;
+            margin-bottom: 10px;
+        }
+        .bill-info {
+            padding: 0 20px 20px;
+            text-align: center;
+        }
+        .amount {
+            color: #a50064;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .btn-confirm {
+            background-color: #a50064;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .btn-confirm:hover {
+            background-color: #850050;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="momo-card">
+    <div class="header">
+        <h5 class="m-0">THANH TOÁN MOMO</h5>
+    </div>
+
+    <div class="qr-area">
+        <p class="text-muted small">Quét mã QR để thanh toán</p>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" class="qr-img" alt="QR Code">
+    </div>
+
+    <div class="bill-info">
+        <div class="mb-2">Hóa đơn: <strong>{{ bill.ten_hoa_don }}</strong></div>
+        <div class="amount mb-3">{{ "{:,.0f}".format(bill.so_tien) }} đ</div>
+
+        <div class="alert alert-warning" style="font-size: 13px;">
+            <i class="bi bi-info-circle"></i> Đây là màn hình giả lập.
+            Vui lòng bấm nút bên dưới để hoàn tất.
+        </div>
+    </div>
+
+    <form action="/payment/confirm/{{ bill.id }}" method="POST">
+        <button type="submit" class="btn btn-confirm">
+            XÁC NHẬN ĐÃ THANH TOÁN
+        </button>
+    </form>
+
+    <div class="text-center py-3">
+        <a href="/admin/hoadon/" class="text-secondary text-decoration-none small">Hủy giao dịch</a>
+    </div>
+</div>
+
+</body>
+</html>

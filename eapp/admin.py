@@ -11,11 +11,10 @@ from flask import redirect
 from wtforms import Form
 from utils import *
 from sqlalchemy.orm import joinedload
-
+from models import HoaDon
 from __init__ import app, db
 
-from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus
-
+from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, PhoneNumber
 
 
 @app.route('/admin')
@@ -125,9 +124,7 @@ def regulations_admin():
         {'key': 'phi_dich_vu', 'name': 'Phí Dịch vụ (vnđ/tháng)', 'value': qd.phi_dich_vu}
     ]
 
-
     print(f">>> LIST TRẢ VỀ HTML CÓ {len(regulations_list)} DÒNG.")
-
 
     return render_template('admin/regulations_admin.html', regulations_list=regulations_list)
 
@@ -150,7 +147,6 @@ def update_regulation():
 
     return redirect(url_for('regulations_admin'))
 
-<<<<<<< Updated upstream
 
 @app.route('/admin/contracts')
 @admin_required
@@ -170,7 +166,6 @@ def contracts_admin():
                            customers=customers,
                            empty_rooms=empty_rooms,
                            now_date=datetime.now().strftime('%Y-%m-%d'))
-
 
 
 @app.route('/admin/contracts/create', methods=['POST'])
@@ -254,7 +249,6 @@ def create_contract():
             flash(f'Căn hộ {ma_can_ho_str} không tồn tại!', 'danger')
             return redirect(url_for('contract_list'))
 
-
         # Khởi tạo Hợp đồng
         new_hd = HopDong(
             ngay_ky=ngay_ky,
@@ -317,27 +311,59 @@ def cancel_contract():
         flash('Đã hủy hợp đồng thành công!', 'success')
 
     return redirect(url_for('contracts_admin'))
-=======
+
+
 @app.route('/admin/tenants')
 @admin_required
 def tenant_manager():
-
-    tenants_data=db.session.query(
+    tenants_data = db.session.query(
         HopDong.id,
         Customer.name,
         Customer.avatar,
         PhoneNumber.phone,
         CanHo.ma_can_ho,
         HopDong.ngay_ky,
-        HopDong.thoi_han,
+        HopDong.ngay_tra,
         HopDong.tien_coc
-    ).join(Customer,HopDong.id_nguoi_thue==Customer.user_id)\
-    .join(CanHo,HopDong.id_can_ho==CanHo.id)\
-    .outerjoin(PhoneNumber, Account.id==PhoneNumber.user_id)\
-    .all()
+    ).join(Customer, HopDong.id_nguoi_thue == Customer.user_id) \
+        .join(CanHo, HopDong.id_can_ho == CanHo.id) \
+        .outerjoin(PhoneNumber, Account.id == PhoneNumber.user_id) \
+        .all()
 
     return render_template('admin/tenant_manager.html', tenants=tenants_data)
->>>>>>> Stashed changes
+
+
+class HoaDonView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.user_type == 'admin'
+
+    column_labels = {
+        'ten_hoa_don': 'Nội dung',
+        'so_tien': 'Số tiền (vnđ)',
+        'ngay_tao': 'Ngày tạo',
+        'trang_thai': 'Trạng thái',
+        'hop_dong': 'Hợp đồng',
+        'test_payment': 'Thanh toán'
+    }
+
+    column_list = ['id', 'ten_hoa_don', 'so_tien', 'trang_thai', 'test_payment']
+
+    def _test_payment_link(view, context, model, name):
+        if not model.trang_thai:
+            checkout_url = f"/payment/checkout/{model.id}"
+            return Markup(
+                f'<a href="{checkout_url}" target="_blank" class="btn btn-sm btn-warning">Thanh toán tại đây</a>')
+        return Markup('<span class="badge bg-success">Đã thanh toán</span>')
+
+    column_formatters = {
+        'so_tien': lambda v, c, m, p: "{:,.0f}".format(m.so_tien),
+        'test_payment': _test_payment_link
+    }
+
+    form_columns = ['ten_hoa_don', 'so_tien', 'trang_thai', 'hop_dong']
+
+
+admin.add_view(HoaDonView(HoaDon, db.session, name='Quản lý Hóa đơn', endpoint='hoadon'))
 
 # T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
 

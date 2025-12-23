@@ -96,6 +96,7 @@ class CanHo(BaseModel):
     id_loai_can_ho = Column(Integer, ForeignKey(LoaiCanHo.id), nullable=False)
 
     dat_phong = relationship('DatPhong', backref='can_ho', lazy=True)
+
     def __str__(self):
         return self.ma_can_ho
 
@@ -159,6 +160,21 @@ class QuyDinh(BaseModel):
 
     def __str__(self):
         return str(self.id)
+
+
+class HoaDon(BaseModel):
+    __tablename__ = "hoa_don"
+
+    ten_hoa_don = Column(String(100), nullable=False)
+    so_tien = Column(Float, nullable=False, default=0)
+    ngay_tao = Column(DATETIME, default=datetime.now())
+
+    trang_thai = Column(Boolean, default=False)
+    id_hop_dong = Column(Integer, ForeignKey('hop_dong.id'), nullable=False)
+    hop_dong = relationship('HopDong', backref='hoa_don', lazy=True)
+
+    def __str__(self):
+        return str.ten_hoa_don
 
 
 if __name__ == '__main__':

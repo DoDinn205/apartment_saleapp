@@ -1,8 +1,8 @@
-from flask import render_template, request, redirect, url_for
+from flask import render_template, request, redirect, url_for, flash
 from __init__ import app, login
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
-
+from models import HoaDon
 import math
 import os
 import utils
@@ -155,6 +155,30 @@ def common_response():
         'images':images
     }
 
+
+@app.route('/payment/checkout/<int:bill_id>')
+def payment_ui(bill_id):
+    hoa_don = HoaDon.query.get(bill_id)
+
+    if not hoa_don:
+        return "Hóa đơn không tồn tại", 404
+
+    if hoa_don.trang_thai:
+        return "Hóa đơn này đã được thanh toán rồi!"
+
+    return render_template('payment/fake_momo.html', bill=hoa_don)
+
+
+# 2. Route xử lý khi bấm nút "Xác nhận đã thanh toán"
+@app.route('/payment/confirm/<int:bill_id>', methods=['POST'])
+def payment_confirm(bill_id):
+    hoa_don = HoaDon.query.get(bill_id)
+
+    if hoa_don:
+        hoa_don.trang_thai = True
+        db.session.commit()
+
+    return redirect('/admin/hoadon/')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,84 @@
+{% extends 'layout/base_admin.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content px-3 pt-4">
+
+    <h3 class="mb-4">Quản lý Người thuê</h3>
+
+    <div class="card shadow">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách cư dân & Hợp đồng</h6>
+        </div>
+
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+
+                <thead class="table-light text-center">
+                    <tr>
+                        <th style="width: 5%">STT</th>
+                        <th style="width: 30%">Thông tin cư dân</th>
+                        <th style="width: 15%">Số điện thoại</th>
+                        <th style="width: 15%">Phòng</th>
+                        <th style="width: 25%">Thời hạn & Tiền cọc</th>
+                        <th style="width: 10%">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for t in tenants %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ t.avatar }}" class="rounded-circle me-2"
+                                     style="width: 35px; height: 35px; object-fit: cover; border: 1px solid #dee2e6;">
+                                <div>
+                                    <div class="fw-bold text-primary">{{ t.name }}</div>
+                                    <div class="small text-muted fst-italic">ID: {{ t.id }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="text-center text-muted">
+                            {{ t.phone if t.phone else '--' }}
+                        </td>
+
+                        <td class="text-center fw-bold">
+                            {{ t.ma_can_ho }}
+                        </td>
+
+                        <td class="text-center">
+                            <div class="small text-muted">
+                                {{ t.ngay_ky.strftime('%d/%m/%y') }} - {{ t.thoi_han.strftime('%d/%m/%y') }}
+                            </div>
+                            <div class="fw-bold text-danger">
+                                Cọc: {{ "{:,.0f}".format(t.tien_coc) }}
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i> Xem
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    {% if not tenants %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            Chưa có dữ liệu người thuê.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

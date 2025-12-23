@@ -13,7 +13,9 @@ from utils import *
 from sqlalchemy.orm import joinedload
 
 from __init__ import app, db
+
 from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus
+
 
 
 @app.route('/admin')
@@ -148,6 +150,7 @@ def update_regulation():
 
     return redirect(url_for('regulations_admin'))
 
+<<<<<<< Updated upstream
 
 @app.route('/admin/contracts')
 @admin_required
@@ -314,6 +317,27 @@ def cancel_contract():
         flash('Đã hủy hợp đồng thành công!', 'success')
 
     return redirect(url_for('contracts_admin'))
+=======
+@app.route('/admin/tenants')
+@admin_required
+def tenant_manager():
+
+    tenants_data=db.session.query(
+        HopDong.id,
+        Customer.name,
+        Customer.avatar,
+        PhoneNumber.phone,
+        CanHo.ma_can_ho,
+        HopDong.ngay_ky,
+        HopDong.thoi_han,
+        HopDong.tien_coc
+    ).join(Customer,HopDong.id_nguoi_thue==Customer.user_id)\
+    .join(CanHo,HopDong.id_can_ho==CanHo.id)\
+    .outerjoin(PhoneNumber, Account.id==PhoneNumber.user_id)\
+    .all()
+
+    return render_template('admin/tenant_manager.html', tenants=tenants_data)
+>>>>>>> Stashed changes
 
 # T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
 

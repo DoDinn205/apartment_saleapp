@@ -32,76 +32,95 @@
 </div>
 
 <div class="main-container d-flex">
-        <div class="sidebar" id="side_nav">
-            <div class="header-box px-2 pt-3 pb-4 d-flex justify-content-between">
-                <h1 class="fs-4"><span class="bg-white text-dark rounded shadow px-2 me-2">AS</span> <span
-                        class="text-white">Apartment Sale App</span></h1>
-                <button class="btn d-md-none d-block close-btn px-1 py-0 text-white"><i class="bi bi-list"></i></button>
-            </div>
-
-            <ul class="list-unstyled px-2">
-                <li class="{% if request.endpoint == 'admin_index' %}active{% endif %}"><a href="/admin" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-menu-app-fill"></i>
-                        Thông tin chung</a></li>
-                <li class="{% if request.endpoint == 'apartments_admin' %}active{% endif %}"><a href="/admin/apartments_admin" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-house-fill"></i>
-                        Căn hộ</a></li>
-                <li class="{% if request.endpoint == 'tenant_manager' %}active{% endif %}"><a href="/admin/tenants" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-list-ol"></i>
-                        Người thuê</a></li>
-                <li class="{% if request.endpoint == 'contracts_admin' %}active{% endif %}"><a href="/admin/contracts" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-file-text-fill"></i>
-                        Hợp đồng</a></li>
-                <li class=""><a href="/admin/hoadon" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-receipt"></i>
-                        Hóa đơn</a></li>
-
-                <li class="{% if request.endpoint == 'regulations_admin' %}active{% endif %}"><a href="/admin/regulations" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-list-ol"></i>
-
-                        Quy định</a></li>
-                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-bar-chart-line-fill"></i>
-                        Thống kê báo cáo</a></li>
-            </ul>
-            <hr class="h-color mx-2">
-
-            <ul class="list-unstyled px-2">
-                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-gear-fill"></i>
-                        Cài đặt</a></li>
-                <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-bell-fill"></i>
-                        Thông báo</a></li>
-
-            </ul>
-
+    <div class="sidebar" id="side_nav">
+        <div class="header-box px-2 pt-3 pb-4 d-flex justify-content-between">
+            <h1 class="fs-4"><span class="bg-white text-dark rounded shadow px-2 me-2">AS</span> <span
+                    class="text-white">Apartment Sale App</span></h1>
+            <button class="btn d-md-none d-block close-btn px-1 py-0 text-white"><i class="bi bi-list"></i></button>
         </div>
-        <div class="content">
-            <nav class="navbar navbar-expand-md navbar-light bg-light">
-                <div class="container-fluid">
-                    <div class="d-flex justify-content-between d-md-none d-block">
-                     <button class="btn px-1 py-0 open-btn me-2"><i class="fal fa-stream"></i></button>
-                        <a class="navbar-brand fs-4" href="#"><span class="bg-dark rounded px-2 py-0 text-white">AS</span></a>
 
-                    </div>
-                    <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
+        <ul class="list-unstyled px-2">
+            <li class="{% if request.endpoint == 'admin_index' %}active{% endif %}"><a href="/admin"
+                                                                                       class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-menu-app-fill"></i>
+                Thông tin chung</a></li>
+            <li class="{% if request.endpoint == 'apartments_admin' %}active{% endif %}"><a
+                    href="/admin/apartments_admin" class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-house-fill"></i>
+                Căn hộ</a></li>
+            <li class="{% if request.endpoint == 'tenant_manager' %}active{% endif %}"><a href="/admin/tenants"
+                                                                                          class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-list-ol"></i>
+                Người thuê</a></li>
+            <li class="{% if request.endpoint == 'contracts_admin' %}active{% endif %}"><a href="/admin/contracts"
+                                                                                           class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-file-text-fill"></i>
+                Hợp đồng</a></li>
+            <li class=""><a href="/admin/hoadon" class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-receipt"></i>
+                Hóa đơn</a></li>
+
+            <li class="{% if request.endpoint == 'regulations_admin' %}active{% endif %}"><a href="/admin/regulations"
+                                                                                             class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-list-ol"></i>
+
+                Quy định</a></li>
+            <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-bar-chart-line-fill"></i>
+                Thống kê báo cáo</a></li>
+        </ul>
+        <hr class="h-color mx-2">
+
+        <ul class="list-unstyled px-2">
+            <li>
+                <a href="/index" class="text-decoration-none px-3 py-2 d-block">Quay về trang chủ</a>
+            </li>
+            <li>
+                <a href="#" class="text-decoration-none px-3 py-2 d-block"><i class="bi bi-gear-fill"></i> Cài đặt</a>
+            </li>
+            <li>
+                <a href="/admin/notifications" class="text-decoration-none px-3 py-2 d-block">
+                    <i class="bi bi-bell-fill"></i> Thông báo <span class="badge bg-danger ms-1">0</span></a>
+            </li>
+
+        </ul>
+
+    </div>
+    <div class="content">
+        <nav class="navbar navbar-expand-md navbar-light bg-light">
+            <div class="container-fluid">
+                <div class="d-flex justify-content-between d-md-none d-block">
+                    <button class="btn px-1 py-0 open-btn me-2"><i class="fal fa-stream"></i></button>
+                    <a class="navbar-brand fs-4" href="#"><span
+                            class="bg-dark rounded px-2 py-0 text-white">AS</span></a>
+
+                </div>
+                <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
                         data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
-                        <i class="fal fa-bars"></i>
-                    </button>
-                    <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
-                        <ul class="navbar-nav mb-2 mb-lg-0">
-                            <li class="nav-item">
+                    <i class="fal fa-bars"></i>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarSupportedContent">
+                    <ul class="navbar-nav mb-2 mb-lg-0">
+                        <li class="nav-item">
                             <a class="nav-link text-warning" href="#">
                                 Hello, {{ current_user.name }}
                             </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/logout">Đăng xuất</a>
-                            </li>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/logout">Đăng xuất</a>
+                        </li>
 
-                        </ul>
+                    </ul>
 
-                    </div>
                 </div>
-            </nav>
+            </div>
+        </nav>
 
-            {% block content %}
-            {% endblock %}
+        {% block content %}
+        {% endblock %}
 
-        </div>
+    </div>
 </div>
 
 

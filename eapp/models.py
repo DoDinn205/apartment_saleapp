@@ -1,6 +1,11 @@
 from flask_login import UserMixin
+
 from sqlalchemy import Column, Integer, String, ForeignKey, DATETIME, Float, Boolean, Enum
 from sqlalchemy.orm import relationship, backref
+
+from sqlalchemy import Column, Integer, String, ForeignKey, DATETIME, Float, Boolean, Enum, Text
+from sqlalchemy.orm import relationship
+
 from __init__ import db, app
 from datetime import datetime
 
@@ -64,7 +69,7 @@ class Customer(Account):
 
     user_id = Column(Integer, ForeignKey(Account.id), primary_key=True, nullable=False)
     is_renting = Column(Boolean, default=False)
-
+    dat_phong = relationship('DatPhong', backref='customer', lazy=True)
     __mapper_args__ = {
         'polymorphic_identity': 'customer',
     }
@@ -178,7 +183,7 @@ class DatPhong(BaseModel):
     ngay_nhan = Column(DATETIME, nullable=False)
     thoi_han = Column(Integer, nullable=False)
 
-    # trạng thái: 0 = chờ duyệt, 1 = đã duyệt
+    # trạng thái: 0 = chờ duyệt, 1 = đã duyệt, 2 = từ chối
     trang_thai = Column(Integer, default=0)
 
     customer_id = Column(Integer, ForeignKey('customer.user_id'), nullable=False)
@@ -216,6 +221,19 @@ class HoaDon(BaseModel):
     def __str__(self):
         return str.ten_hoa_don
 
+
+class Notification(BaseModel):
+    __tablename__='thong_bao'
+
+    sender_id = Column(Integer, ForeignKey(Account.id), nullable=False)
+    receiver_id = Column(Integer, ForeignKey(Account.id), nullable=False)
+
+    booking_id = Column(Integer, ForeignKey(DatPhong.id), nullable=False)
+
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+
+    ngay_tao = Column(DATETIME, default=datetime.now())
 
 if __name__ == '__main__':
     with app.app_context():
@@ -290,6 +308,6 @@ if __name__ == '__main__':
 
             db.session.commit()
 
-            print(">>> THÀNH CÔNG: Đã tạo bảng và thêm 10 căn hộ mẫu và 1 Admin và 1 Quy định mặc định!")
+            print(">>> THÀNH CÔNG: Đã tạo bảng và thêm 11 căn hộ mẫu và 1 Admin và 1 Quy định mặc định!")
         else:
             print(">>> THÔNG BÁO: Dữ liệu đã tồn tại, không thêm mới.")

@@ -3,27 +3,28 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">Apartment Sale App</a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mynavbar">
+            <button class="navbar-toggler" type="button" onclick="openNotifications()"
+                    data-bs-target="#mynavbar">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="mynavbar">
 
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="/" role="button"
-                           data-bs-toggle="dropdown">Loại phòng</a>
-                        <ul class="dropdown-menu">
-                            {% for l in loai_canho %}
-                            <li><a class="dropdown-item" href="/?id_loai_can_ho={{ l.id }}">{{ l.name }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                </ul>
-
                 <ul class="navbar-nav ms-auto">
 
                     {% if current_user.is_authenticated %}
+
+                    {% if current_user.user_type != 'admin' %}
+                    <li class="nav-item">
+                        <a href="#" onclick="openNotifications()" class="nav-link">
+                            <i class="material-icons text-white align-center">event_note</i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/index">Trang admin</a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link text-warning effect" href="/info_account">
                             <img src="{{ current_user.avatar }}" class="rounded-circle" width="20">
@@ -48,4 +49,26 @@
             </div>
         </div>
     </nav>
+
+    <div class="modal fade" id="myModal">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h4 class="modal-title">Thông báo</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body" id="notificationBody">
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </header>

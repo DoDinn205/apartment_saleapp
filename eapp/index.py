@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, jsonify
 from __init__ import app, login
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
@@ -97,6 +97,10 @@ def info_account_view():
 
     return render_template('info_account.html', form=form)
 
+@app.route('/admin/index')
+@admin_required
+def admin_view():
+    return render_template('/admin/index.html')
 
 # ---Đăng xuất
 @app.route('/logout')
@@ -136,6 +140,24 @@ def booking_process():
         ds_canho = utils.load_canho(canho_id)
         return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}',page=page,
                            pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+
+
+@app.route('/api/notifications')
+@login_required
+def notifications():
+    notis = Notification.query.filter_by(
+        receiver_id=current_user.id
+    ).order_by(Notification.ngay_tao.desc()).all()
+
+    return jsonify([
+        {
+            'id': n.id,
+            'title': n.title,
+            'content': n.content,
+            'ngay_tao':n.ngay_tao
+        }
+        for n in notis
+    ])
 
 
 @app.context_processor

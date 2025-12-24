@@ -4,10 +4,10 @@ from datetime import datetime
 import cloudinary.uploader
 from sqlalchemy.exc import IntegrityError
 
-from models import Account, Customer, CanHo, DatPhong, LoaiCanHo, PhoneNumber
+from models import Account, Customer, CanHo, DatPhong, LoaiCanHo, PhoneNumber, Notification
 from functools import wraps
 from flask import abort, redirect, url_for
-from models import Account, Customer, CanHo, DatPhong,LoaiCanHo
+from models import Account, Customer, CanHo, DatPhong, LoaiCanHo
 from flask_login import current_user
 from __init__ import app, db
 
@@ -29,8 +29,10 @@ def load_canho(kw=None, loai_canho_id=None, page=1):
 def get_canho_by_id(canho_id):
     return CanHo.query.get(canho_id)
 
+
 def count_apartment():
     return CanHo.query.count()
+
 
 def load_loai_canho():
     return LoaiCanHo.query.all()
@@ -51,7 +53,7 @@ def check_login(username, password):
     return None
 
 
-def add_user(name,avatar, phone, username, password):
+def add_user(name, avatar, phone, username, password):
     password = str(password.strip())
     password_hash = hashlib.md5(password.encode('utf-8')).hexdigest()
 
@@ -70,7 +72,7 @@ def add_user(name,avatar, phone, username, password):
         db.session.commit()
     except IntegrityError as ex:
         db.session.rollback()
-        msg=str(ex.orig).lower()
+        msg = str(ex.orig).lower()
         if 'username' in msg:
             raise Exception('Tên đăng nhập đã tồn tại')
         if 'phone' in msg:
@@ -93,13 +95,25 @@ def add_booking(user_id, canho_id, ngay_nhan, thoi_han):
             thoi_han=thoi_han,
         )
         db.session.add(booking)
+
+        admin = Account.query.filter_by(user_type='admin').first()
+        noti = Notification(
+            sender_id=user_id,
+            receiver_id=admin.id,
+            booking_id=booking.id,
+            title='Yêu cầu đặt phòng',
+            content='Có khách hàng yêu cầu đặt phòng'
+        )
+
+        db.session.add(noti)
         db.session.commit()
         return True
     except Exception as ex:
         print(f"Lỗi lưu đặt phòng: {ex}")
         return False
 
-#Hàm kiểm tra người dùng có vai trò admin hay không, tương tự như login_required trong bài tập mẫu của thầy
+
+# Hàm kiểm tra người dùng có vai trò admin hay không, tương tự như login_required trong bài tập mẫu của thầy
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

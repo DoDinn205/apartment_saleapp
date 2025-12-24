@@ -1,0 +1,38 @@
+{% extends '/layout/base_admin.html' %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+{% block content %}
+
+<section class="container">
+    <h1 class="mb-4 mt-4 text-center">Thông báo</h1>
+
+    {% if bookings %}
+    <table class="table">
+        <tr>
+            <th>ID</th>
+            <th>Tên khách hàng</th>
+            <th>Căn hộ</th>
+            <th>Thời hạn thuê</th>
+            <th>Ngày thuê</th>
+            <th>Duyệt</th>
+        </tr>
+
+        {% for b in bookings %}
+        <tr>
+            <td>{{ b.id }}</td>
+            <td>{{ b.customer.name }}</td>
+            <td>{{ b.can_ho.ma_can_ho }}</td>
+            <td>{{ b.thoi_han }} tháng</td>
+            <td>{{ b.ngay_nhan.strftime("%d-%m-%Y") }}</td>
+            <td>
+                <a href="/admin/booking/approve{{ b.id }}" class="btn btn-success">&check;</a>
+                <a href="/admin/booking/reject{{ b.id }}" class="btn btn-danger">&times;</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</section>
+
+{% endblock %}

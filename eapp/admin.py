@@ -22,6 +22,10 @@ from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, 
 def admin_index():
     return render_template('admin/index.html')
 
+@app.route('/index')
+@admin_required
+def return_client_view():
+    return redirect('/')
 
 # Route quản lý căn hộ
 @app.route('/admin/apartments_admin')
@@ -375,6 +379,53 @@ def tenant_manager():
     return render_template('admin/tenant_manager.html', tenants=tenants_data)
 
 
+@app.route('/admin/notifications')
+@admin_required
+def admin_booking():
+    bookings = DatPhong.query.filter_by(trang_thai=0).all()
+    return render_template('admin/notification_admin.html', bookings=bookings)
+
+
+
+@app.route('/admin/booking/approve<id>')
+@admin_required
+def approve_booking(id):
+    booking = DatPhong.query.get(id)
+
+    booking.trang_thai=1
+    db.session.add(booking)
+    noti = Notification(
+        sender_id=current_user.id,
+        receiver_id=booking.customer.id,
+        booking_id=booking.id,
+        title='Đặt phòng thành công',
+        content='Yêu cầu của bạn đã được chấp nhận'
+    )
+    db.session.add(noti)
+    db.session.commit()
+    return redirect('/admin/notifications')
+
+
+@app.route('/admin/booking/reject<id>')
+@admin_required
+def reject_booking(id):
+    booking = DatPhong.query.get(id)
+    booking.trang_thai=2
+
+    db.session.add(booking)
+
+    noti = Notification(
+        sender_id=current_user.id,
+        receiver_id=booking.customer.id,
+        booking_id=booking.id,
+        title='Đặt phòng thất bại',
+        content='Yêu cầu của bạn đã bị quản lý từ chối'
+    )
+    db.session.add(noti)
+    db.session.commit()
+
+    return redirect('/admin/notifications')
+
 class HoaDonView(ModelView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.user_type == 'admin'
@@ -403,6 +454,7 @@ class HoaDonView(ModelView):
     }
 
     form_columns = ['ten_hoa_don', 'so_tien', 'trang_thai', 'hop_dong']
+
 
 
 admin.add_view(HoaDonView(HoaDon, db.session, name='Quản lý Hóa đơn', endpoint='hoadon'))

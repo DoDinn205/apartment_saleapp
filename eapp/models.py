@@ -1,6 +1,6 @@
 from flask_login import UserMixin
 from sqlalchemy import Column, Integer, String, ForeignKey, DATETIME, Float, Boolean, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from __init__ import db, app
 from datetime import datetime
 
@@ -106,15 +106,16 @@ class HopDong(BaseModel):
 
     ngay_ky = Column(DATETIME, nullable=False)
     ngay_tra = Column(DATETIME, nullable=False)
-    gia_thue = Column(Float, nullable=False)
     tien_coc = Column(Float, nullable=False)
-
+    gia_chot_thue = Column(Float, nullable=False)
     id_quan_ly = Column(Integer, ForeignKey('admin.user_id'), nullable=False)
     id_nguoi_thue = Column(Integer, ForeignKey('customer.user_id'), nullable=False)
     id_can_ho = Column(Integer, ForeignKey('can_ho.id'), nullable=False)
 
     khach_hang = relationship('Customer', foreign_keys=[id_nguoi_thue], lazy=True)
     can_ho = relationship('CanHo', foreign_keys=[id_can_ho], lazy=True)
+
+    id_quy_dinh = Column(Integer, ForeignKey('quy_dinh.id'), nullable=False)
 
     @property
     def so_ngay_thue(self):
@@ -130,6 +131,43 @@ class HopDong(BaseModel):
 
     def __str__(self):
         return str(self.id)
+
+    @property
+    def hien_tai_so_nguoi(self):
+        return len(self.chi_tiet) if self.chi_tiet else 0
+
+    @property
+    def is_overcrowded(self):
+        """
+        Trả về True nếu số người hiện tại > số người tối đa trong quy định
+        """
+        if self.quy_dinh_ap_dung:
+            limit = self.quy_dinh_ap_dung.so_nguoi_thue_toi_da
+            return self.hien_tai_so_nguoi > limit
+        return False
+
+    @property
+    def message_vi_pham(self):
+        """Trả về thông báo nếu vi phạm"""
+        if self.is_overcrowded:
+            limit = self.quy_dinh_ap_dung.so_nguoi_thue_toi_da
+            return f"Cảnh báo: Đang ở {self.hien_tai_so_nguoi}/{limit} người (Vượt quy định)"
+        return ""
+
+
+class ChiTietHopDong(BaseModel):
+    __tablename__ = "chi_tiet_hop_dong"
+
+    # Hai khóa ngoại trỏ về 2 bảng chính
+    id_hop_dong = Column(Integer, ForeignKey('hop_dong.id'), nullable=False)
+    id_nguoi_thue = Column(Integer, ForeignKey('customer.user_id'), nullable=False)
+
+    # Thiết lập quan hệ để truy vấn ngược
+    hop_dong = relationship('HopDong', backref=backref('chi_tiet', cascade="all, delete-orphan", lazy=True))
+    nguoi_thue = relationship('Customer', backref=backref('cac_hop_dong_tham_gia', lazy=True))
+
+    def __str__(self):
+        return f"{self.id_hop_dong} - {self.id_nguoi_thue}"
 
 
 class DatPhong(BaseModel):
@@ -157,6 +195,8 @@ class QuyDinh(BaseModel):
     gia_nuoc = Column(Float, nullable=False, default=0)
     so_nguoi_thue_toi_da = Column(Integer, nullable=False, default=4)
     phi_dich_vu = Column(Float, nullable=False, default=0)
+
+    hop_dong = relationship('HopDong', backref='quy_dinh_ap_dung', lazy=True)
 
     def __str__(self):
         return str(self.id)

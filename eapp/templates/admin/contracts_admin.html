@@ -15,7 +15,7 @@
                 <div class="modal-content">
                     <form action="{{ url_for('create_contract') }}" method="POST">
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title">Soạn thảo Hợp đồng thuê</h5>
+                            <h5 class="modal-title">Tạo hợp đồng thuê</h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
 
@@ -24,12 +24,12 @@
                             <div class="row mb-3">
 
                                 <div class="col-md-12">
-                                    <label class="form-label">Chọn Căn hộ (Chỉ hiện phòng trống)</label>
-                                    <select class="form-select" name="ma_can_ho" required>
-                                        <option value="">-- Chọn phòng --</option>
-                                        {% for room in empty_rooms %}
-                                        <option value="{{ room.ma_can_ho }}">
-                                            {{ room.ma_can_ho }} - {{ "{:,.0f}".format(room.gia_thue) }}đ
+                                    <label class="form-label">Chọn căn hộ</label>
+                                    <select class="form-select" name="ma_can_ho" id="select_apm" required>
+                                        <option value="">-- Chọn căn hộ --</option>
+                                        {% for apm in empty_apartments %}
+                                        <option value="{{ apm.ma_can_ho }}" data-price="{{ apm.gia_thue }}">
+                                            {{ apm.ma_can_ho }}
                                         </option>
                                         {% endfor %}
                                     </select>
@@ -52,8 +52,8 @@
                             <div class="row mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label">Giá chốt thuê</label>
-                                    <input type="number" class="form-control" name="gia_thue" placeholder="Nhập giá..."
-                                           required>
+                                    <input type="number" class="form-control" name="gia_chot_thue" id="input_gia_thue"
+                                           placeholder="Giá chốt thuê">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Tiền cọc</label>
@@ -130,6 +130,7 @@
                 <th>Mã HĐ</th>
                 <th>Căn hộ</th>
                 <th>Người thuê</th>
+                <th>Số người thuê</th>
                 <th>Ngày ký</th>
                 <th>Ngày trả</th>
                 <th>Thời hạn</th>
@@ -150,6 +151,16 @@
                     <div class="fw-bold">{{ c.khach_hang.name }}</div>
                 </td>
 
+                <td>
+                    {{ c.hien_tai_so_nguoi }}
+                    {% if c.is_overcrowded %}
+                    <br>
+                    <small class="text-danger fw-bold">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Quá số người theo quy định
+                    </small>
+                    {% endif %}
+                </td>
+
                 <td class="text-center">{{ c.ngay_ky.strftime('%d/%m/%Y') }}</td>
 
                 <td class="text-center">
@@ -164,21 +175,28 @@
                 </td>
 
                 <td class="text-center">
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-success extendBtn"
-                                    data-bs-toggle="modal" data-bs-target="#extendModal"
-                                    data-id="{{ c.id }}"
-                                    data-old-date="{{ c.ngay_tra.strftime('%Y-%m-%d') }}">
-                                <i class="bi bi-calendar-plus"></i> Gia hạn
-                            </button>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-success extendBtn"
+                                data-bs-toggle="modal" data-bs-target="#extendModal"
+                                data-id="{{ c.id }}"
+                                data-old-date="{{ c.ngay_tra.strftime('%Y-%m-%d') }}">
+                            <i class="bi bi-calendar-plus"></i> Gia hạn
+                        </button>
 
-                            <button type="button" class="btn btn-sm btn-danger cancelBtn"
-                                    data-bs-toggle="modal" data-bs-target="#cancelModal"
-                                    data-id="{{ c.id }}">
-                                <i class="bi bi-x-circle"></i> Hủy
-                            </button>
-                        </div>
-                    </td>
+                        <button type="button" class="btn btn-sm btn-danger cancelBtn"
+                                data-bs-toggle="modal" data-bs-target="#cancelModal"
+                                data-id="{{ c.id }}">
+                            <i class="bi bi-x-circle"></i> Hủy
+                        </button>
+
+                        <button type="button" class="btn btn-sm btn-info text-white addMemberBtn"
+                                data-bs-toggle="modal" data-bs-target="#addMemberModal"
+                                data-id="{{ c.id }}"
+                                title="Thêm người ở ghép">
+                            <i class="bi bi-person-plus-fill"></i>
+                        </button>
+                    </div>
+                </td>
             </tr>
             {% endfor %}
             </tbody>
@@ -209,7 +227,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-success">Xác nhận gia hạn</button>
+                    <button type="submit" class="btn btn-success">Xác nhận</button>
                 </div>
             </form>
         </div>
@@ -235,6 +253,41 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
                     <button type="submit" class="btn btn-danger">Đồng ý Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addMemberModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{{ url_for('add_contract_member') }}" method="POST">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Thêm thành viên vào căn hộ</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="contract_id" id="member_contract_id_hidden">
+
+                    <div class="mb-3">
+                        <label class="form-label">Chọn người thuê cần thêm</label>
+                        <select class="form-select" name="customer_id" required>
+                            <option value="">-- Chọn người dùng --</option>
+                            {% for cus in customers %}
+                            {% if not cus.is_renting %}
+                            <option value="{{ cus.user_id }}">
+                                {{ cus.name }} - {{ cus.username }}
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Chỉ hiển thị những khách hàng chưa có phòng.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-info text-white">Xác nhận thêm</button>
                 </div>
             </form>
         </div>

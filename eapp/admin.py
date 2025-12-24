@@ -14,7 +14,7 @@ from sqlalchemy.orm import joinedload
 from models import HoaDon
 from __init__ import app, db
 
-from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, PhoneNumber
+from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, PhoneNumber, ChiTietHopDong
 
 
 @app.route('/admin')
@@ -159,12 +159,12 @@ def contracts_admin():
     customers = Customer.query.all()
 
     # Lấy danh sách phòng TRỐNG để chọn
-    empty_rooms = CanHo.query.filter_by(trang_thai=ApartmentStatus.CONTRONG).all()
+    empty_apartments = CanHo.query.filter_by(trang_thai=ApartmentStatus.CONTRONG).all()
 
     return render_template('admin/contracts_admin.html',
                            contracts=contracts,
                            customers=customers,
-                           empty_rooms=empty_rooms,
+                           empty_apartments=empty_apartments,
                            now_date=datetime.now().strftime('%Y-%m-%d'))
 
 
@@ -178,16 +178,12 @@ def create_contract():
     try:
         ngay_ky = datetime.strptime(request.form.get('ngay_ky'), '%Y-%m-%d')
         ngay_tra = datetime.strptime(request.form.get('ngay_tra'), '%Y-%m-%d')
+        tien_coc = float(request.form.get('tien_coc'))
+        gia_chot_thue = float(request.form.get('gia_chot_thue'))
     except ValueError:
-        flash('Định dạng ngày tháng không hợp lệ!', 'danger')
         return redirect(url_for('contract_list'))
 
-    try:
-        gia_thue = float(request.form.get('gia_thue'))
-        tien_coc = float(request.form.get('tien_coc'))
-    except ValueError:
-        flash('Giá thuê hoặc tiền cọc phải là số!', 'danger')
-        return redirect(url_for('contract_list'))
+
 
     # --- 2. XỬ LÝ NGƯỜI THUÊ ---
     option = request.form.get('customer_option')
@@ -199,7 +195,6 @@ def create_contract():
             customer_obj = Customer.query.get(cus_id_input)
 
             if not customer_obj:
-                flash('Khách hàng đã chọn không tồn tại!', 'danger')
                 return redirect(url_for('contract_list'))
 
         elif option == 'new':
@@ -244,31 +239,35 @@ def create_contract():
         # --- 3. TẠO HỢP ĐỒNG ---
         # Tìm đối tượng Căn hộ dựa trên Mã căn hộ (String)
         room_obj = CanHo.query.filter_by(ma_can_ho=ma_can_ho_str).first()
-
-        if not room_obj:
-            flash(f'Căn hộ {ma_can_ho_str} không tồn tại!', 'danger')
-            return redirect(url_for('contract_list'))
+        current_rule = QuyDinh.query.order_by(QuyDinh.id.desc()).first()
 
         # Khởi tạo Hợp đồng
         new_hd = HopDong(
             ngay_ky=ngay_ky,
             ngay_tra=ngay_tra,
-            gia_thue=gia_thue,
             tien_coc=tien_coc,
-
+            gia_chot_thue=gia_chot_thue,
             id_quan_ly=current_user.id,
             id_nguoi_thue=customer_obj.id,
-            id_can_ho=room_obj.id
+            id_can_ho=room_obj.id,
+            id_quy_dinh=current_rule.id
         )
 
         # --- 4. CẬP NHẬT TRẠNG THÁI ---
         # Cập nhật trạng thái phòng -> Đã thuê
         room_obj.trang_thai = ApartmentStatus.DANGTHUE
-
         # Cập nhật trạng thái người dùng (nếu chọn người cũ chưa thuê)
         customer_obj.is_renting = True
 
         db.session.add(new_hd)
+        db.session.flush()
+
+        new_detail = ChiTietHopDong(
+            id_hop_dong=new_hd.id,
+            id_nguoi_thue=customer_obj.id
+        )
+        db.session.add(new_detail)
+
         db.session.commit()
 
         flash('Tạo hợp đồng thành công!', 'success')
@@ -277,6 +276,49 @@ def create_contract():
         db.session.rollback()  # Hoàn tác nếu có lỗi
         print(f"Error: {str(e)}")  # In lỗi ra console để debug
         flash(f'Đã xảy ra lỗi: {str(e)}', 'danger')
+
+    return redirect(url_for('contracts_admin'))
+
+@app.route('/admin/contracts/add-member', methods=['POST'])
+@admin_required
+def add_contract_member():
+    contract_id = request.form.get('contract_id')
+    customer_id = request.form.get('customer_id') # ID của người được chọn thêm vào
+
+    contract = HopDong.query.get(contract_id)
+    customer = Customer.query.get(customer_id)
+
+    if not contract or not customer:
+        flash('Dữ liệu không hợp lệ', 'danger')
+        return redirect(url_for('contracts_admin'))
+
+    # 1. Kiểm tra quy định tối đa 4 người
+    # Đếm số record trong bảng ChiTietHopDong của hợp đồng này
+    current_members = ChiTietHopDong.query.filter_by(id_hop_dong=contract_id).count()
+    if current_members >= 4:
+        flash('Hợp đồng này đã đủ 4 người. Không thể thêm!', 'warning')
+        return redirect(url_for('contracts_admin'))
+
+    # 2. Kiểm tra xem người này đã có trong hợp đồng chưa
+    exists = ChiTietHopDong.query.filter_by(id_hop_dong=contract_id, id_nguoi_thue=customer_id).first()
+    if exists:
+        flash('Người này đã có trong danh sách cư dân!', 'warning')
+        return redirect(url_for('contracts_admin'))
+
+    # 3. Thêm vào bảng chi tiết
+    try:
+        new_member = ChiTietHopDong(
+            id_hop_dong=contract_id,
+            id_nguoi_thue=customer_id,
+            vai_tro='Thành viên'
+        )
+        customer.is_renting = True # Cập nhật trạng thái khách
+        db.session.add(new_member)
+        db.session.commit()
+        flash(f'Đã thêm {customer.name} vào căn hộ!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi: {str(e)}', 'danger')
 
     return redirect(url_for('contracts_admin'))
 

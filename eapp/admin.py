@@ -362,22 +362,47 @@ def cancel_contract():
 @app.route('/admin/tenants')
 @admin_required
 def tenant_manager():
-    tenants_data = db.session.query(
-        HopDong.id,
-        Customer.name,
-        Customer.avatar,
-        PhoneNumber.phone,
-        CanHo.ma_can_ho,
-        HopDong.ngay_ky,
-        HopDong.ngay_tra,
-        HopDong.tien_coc
-    ).join(Customer, HopDong.id_nguoi_thue == Customer.user_id) \
-        .join(CanHo, HopDong.id_can_ho == CanHo.id) \
-        .outerjoin(PhoneNumber, Account.id == PhoneNumber.user_id) \
-        .all()
+    # tenants_data = db.session.query(
+    #     HopDong.id,
+    #     Customer.name,
+    #     Customer.avatar,
+    #     PhoneNumber.phone,
+    #     CanHo.ma_can_ho,
+    #     HopDong.ngay_ky,
+    #     HopDong.ngay_tra,
+    #     HopDong.tien_coc
+    # ).join(Customer, HopDong.id_nguoi_thue == Customer.user_id) \
+    #     .join(CanHo, HopDong.id_can_ho == CanHo.id) \
+    #     .outerjoin(PhoneNumber, Account.id == PhoneNumber.user_id) \
+    #     .all()
+    tenants_data = HopDong.query.options(
+        joinedload(HopDong.khach_hang).joinedload(Customer.phone),  # Nối bảng khách và sđt
+        joinedload(HopDong.can_ho)  # Nối bảng căn hộ
+    ).all()
 
     return render_template('admin/tenant_manager.html', tenants=tenants_data)
 
+
+@app.route('/admin/tenant/update', methods=['POST'])
+def update_tenant_info():
+    user_id = request.form.get('user_id')
+    name = request.form.get('name')
+    phone_number = request.form.get('phone')
+
+    customer = Customer.query.get(user_id)
+    if customer:
+        customer.name = name
+
+        if customer.phone:
+            customer.phone.phone = phone_number
+        else:
+            new_phone = PhoneNumber(phone=phone_number, user_id=customer.id)
+            db.session.add(new_phone)
+
+        db.session.commit()
+        flash('Cập nhật thông tin khách hàng thành công!', 'success')
+
+    return redirect('/admin/tenants')
 
 @app.route('/admin/notifications')
 @admin_required
@@ -426,38 +451,38 @@ def reject_booking(id):
 
     return redirect('/admin/notifications')
 
-class HoaDonView(ModelView):
-    def is_accessible(self):
-        return current_user.is_authenticated and current_user.user_type == 'admin'
-
-    column_labels = {
-        'ten_hoa_don': 'Nội dung',
-        'so_tien': 'Số tiền (vnđ)',
-        'ngay_tao': 'Ngày tạo',
-        'trang_thai': 'Trạng thái',
-        'hop_dong': 'Hợp đồng',
-        'test_payment': 'Thanh toán'
-    }
-
-    column_list = ['id', 'ten_hoa_don', 'so_tien', 'trang_thai', 'test_payment']
-
-    def _test_payment_link(view, context, model, name):
-        if not model.trang_thai:
-            checkout_url = f"/payment/checkout/{model.id}"
-            return Markup(
-                f'<a href="{checkout_url}" target="_blank" class="btn btn-sm btn-warning">Thanh toán tại đây</a>')
-        return Markup('<span class="badge bg-success">Đã thanh toán</span>')
-
-    column_formatters = {
-        'so_tien': lambda v, c, m, p: "{:,.0f}".format(m.so_tien),
-        'test_payment': _test_payment_link
-    }
-
-    form_columns = ['ten_hoa_don', 'so_tien', 'trang_thai', 'hop_dong']
-
-
-
-admin.add_view(HoaDonView(HoaDon, db.session, name='Quản lý Hóa đơn', endpoint='hoadon'))
+# class HoaDonView(ModelView):
+#     def is_accessible(self):
+#         return current_user.is_authenticated and current_user.user_type == 'admin'
+#
+#     column_labels = {
+#         'ten_hoa_don': 'Nội dung',
+#         'so_tien': 'Số tiền (vnđ)',
+#         'ngay_tao': 'Ngày tạo',
+#         'trang_thai': 'Trạng thái',
+#         'hop_dong': 'Hợp đồng',
+#         'test_payment': 'Thanh toán'
+#     }
+#
+#     column_list = ['id', 'ten_hoa_don', 'so_tien', 'trang_thai', 'test_payment']
+#
+#     def _test_payment_link(view, context, model, name):
+#         if not model.trang_thai:
+#             checkout_url = f"/payment/checkout/{model.id}"
+#             return Markup(
+#                 f'<a href="{checkout_url}" target="_blank" class="btn btn-sm btn-warning">Thanh toán tại đây</a>')
+#         return Markup('<span class="badge bg-success">Đã thanh toán</span>')
+#
+#     column_formatters = {
+#         'so_tien': lambda v, c, m, p: "{:,.0f}".format(m.so_tien),
+#         'test_payment': _test_payment_link
+#     }
+#
+#     form_columns = ['ten_hoa_don', 'so_tien', 'trang_thai', 'hop_dong']
+#
+#
+#
+# admin.add_view(HoaDonView(HoaDon, db.session, name='Quản lý Hóa đơn', endpoint='hoadon'))
 
 # T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
 

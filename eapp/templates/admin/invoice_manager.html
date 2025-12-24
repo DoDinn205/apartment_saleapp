@@ -1,0 +1,197 @@
+{% extends "layout/base_admin.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content px-3 pt-4">
+    <h3 class="mt-4">Quản lý Hóa đơn</h3>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="mb-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInvoiceModal">
+            <i class="bi bi-plus-circle"></i> Tạo hóa đơn mới
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="bi bi-table"></i> Danh sách hóa đơn
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nội dung thu</th>
+                            <th>Phòng / Khách hàng</th>
+                            <th>Số tiền</th>
+                            <th>Ngày tạo</th>
+                            <th>Trạng thái</th>
+                            <th style="width: 150px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if invoices|length == 0 %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">Chưa có hóa đơn nào.</td>
+                            </tr>
+                        {% else %}
+                            {% for hd in invoices %}
+                            <tr>
+                                <td align="center">{{ hd.id }}</td>
+                                <td align="center">{{ hd.ten_hoa_don }}</td>
+                                <td align="center">
+                                    {% if hd.hop_dong %}
+                                        <strong>P.{{ hd.hop_dong.can_ho.ma_can_ho }}</strong><br>
+                                        <small class="text-muted">{{ hd.hop_dong.khach_hang.name }}</small>
+                                    {% else %}
+                                        <span class="text-danger">Không xác định</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-danger" align="center">{{ "{:,.0f}".format(hd.so_tien) }} đ</td>
+                                <td align="center">
+                                    {% if hd.ngay_tao %}
+                                        {{ hd.ngay_tao.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        --/--/----
+                                    {% endif %}
+                                </td>
+                                <td align="center">
+                                    {% if hd.trang_thai %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Đã thanh toán</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Chưa thu</span>
+                                    {% endif %}
+                                </td>
+                                <td align="center">
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ hd.id }}" title="Chỉnh sửa">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </button>
+
+                                    {% if not hd.trang_thai %}
+                                    <a href="/payment/checkout/{{ hd.id }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Link thanh toán MoMo">
+                                        <i class="bi bi-qr-code"></i>
+                                    </a>
+                                    {% endif %}
+
+                                    <a href="/admin/invoice/delete/{{ hd.id }}" class="btn btn-sm btn-secondary" onclick="return confirm('Bạn chắc chắn muốn xóa hóa đơn này?')" title="Xóa">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+
+                                    <div class="modal fade" id="editModal{{ hd.id }}" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form action="/admin/invoice/update" method="POST">
+                                                    <div class="modal-header bg-warning text-dark">
+                                                        <h5 class="modal-title">Cập nhật hóa đơn #{{ hd.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body text-start">
+                                                        <input type="hidden" name="id" value="{{ hd.id }}">
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Tên hóa đơn:</label>
+                                                            <input type="text" name="ten_hoa_don" class="form-control" value="{{ hd.ten_hoa_don }}" required>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Số tiền (VNĐ):</label>
+                                                            <input type="number" name="so_tien" class="form-control" value="{{ hd.so_tien }}" required>
+                                                        </div>
+
+                                                        <div class="mb-3">
+                                                            <label class="form-label fw-bold">Thuộc Hợp đồng (Phòng):</label>
+                                                            <select name="hop_dong_id" class="form-select">
+                                                                {% for c in contracts %}
+                                                                    <option value="{{ c.id }}" {% if c.id == hd.id_hop_dong %}selected{% endif %}>
+                                                                        HĐ #{{ c.id }} - P.{{ c.can_ho.ma_can_ho }} ({{ c.khach_hang.name }})
+                                                                    </option>
+                                                                {% endfor %}
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="form-check p-3 border rounded bg-light">
+                                                            <input class="form-check-input" type="checkbox" name="trang_thai" id="status{{ hd.id }}"
+                                                                   {% if hd.trang_thai %}checked{% endif %}>
+                                                            <label class="form-check-label fw-bold text-success" for="status{{ hd.id }}">
+                                                                Đã thanh toán xong?
+                                                            </label>
+                                                            <div class="form-text">Tick vào nếu khách đã trả tiền mặt.</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    </td>
+                            </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addInvoiceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/admin/invoice/add" method="POST">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Tạo hóa đơn mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nội dung thu:</label>
+                        <input type="text" name="ten_hoa_don" class="form-control" placeholder="Ví dụ: Tiền điện tháng 10" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số tiền (VNĐ):</label>
+                        <input type="number" name="so_tien" class="form-control" placeholder="Nhập số tiền..." required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Chọn Khách hàng / Phòng:</label>
+                        <select name="hop_dong_id" class="form-select" required>
+                            <option value="" disabled selected>-- Chọn hợp đồng --</option>
+                            {% for c in contracts %}
+                                <option value="{{ c.id }}">
+                                    HĐ #{{ c.id }} - P.{{ c.can_ho.ma_can_ho }} - Khách: {{ c.khach_hang.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Tạo hóa đơn</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+{% endblock %}

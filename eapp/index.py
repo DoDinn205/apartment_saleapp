@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify
 from __init__ import app, login
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
-from models import HoaDon
+from models import HoaDon, HopDong, db
 import math
 import os
 import utils
@@ -13,8 +13,6 @@ from utils import check_login
 
 @app.route('/')
 def index():
-
-
     loai_canho = utils.load_loai_canho()
 
     page = int(request.args.get('page', 1))
@@ -97,10 +95,12 @@ def info_account_view():
 
     return render_template('info_account.html', form=form)
 
+
 @app.route('/admin/index')
 @admin_required
 def admin_view():
     return render_template('/admin/index.html')
+
 
 # ---Đăng xuất
 @app.route('/logout')
@@ -129,17 +129,17 @@ def booking_process():
         if utils.add_booking(current_user.id, canho_id, ngay_nhan, thoi_han):
             ds_canho = utils.load_canho(canho_id)
             msg = 'Bạn đã đặt phòng thành công. Chúng tôi sẽ liên hệ bạn sớm!'
-            return render_template('index.html', apartments=ds_canho, success_msg=msg,page=page,
-                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+            return render_template('index.html', apartments=ds_canho, success_msg=msg, page=page,
+                                   pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
         else:
             ds_canho = utils.load_canho(canho_id)
             err = 'Có lỗi xảy ra. Vui lòng thử lại sau!'
-            return render_template('index.html', apartments=ds_canho, err_msg=err,page=page,
-                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+            return render_template('index.html', apartments=ds_canho, err_msg=err, page=page,
+                                   pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
     except Exception as ex:
         ds_canho = utils.load_canho(canho_id)
-        return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}',page=page,
-                           pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+        return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}', page=page,
+                               pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
 
 
 @app.route('/api/notifications')
@@ -154,7 +154,7 @@ def notifications():
             'id': n.id,
             'title': n.title,
             'content': n.content,
-            'ngay_tao':n.ngay_tao
+            'ngay_tao': n.ngay_tao
         }
         for n in notis
     ])
@@ -174,10 +174,11 @@ def common_response():
         print(f"Lỗi load banner: {e}")
     return {
         'loai_canho': utils.load_loai_canho(),
-        'images':images
+        'images': images
     }
 
 
+# Thanh toán
 @app.route('/payment/checkout/<int:bill_id>')
 def payment_ui(bill_id):
     hoa_don = HoaDon.query.get(bill_id)
@@ -199,8 +200,75 @@ def payment_confirm(bill_id):
     if hoa_don:
         hoa_don.trang_thai = True
         db.session.commit()
+        flash('Thanh toán thành công!', 'success')
 
-    return redirect('/admin/hoadon/')
+    return redirect(url_for('invoice_manager'))
+
+
+# Danh sách Hóa đơn
+@app.route('/admin/invoice-manager')
+def invoice_manager():
+    ds_hoa_don = HoaDon.query.order_by(HoaDon.id.desc()).all()
+    ds_hop_dong = HopDong.query.all()
+    return render_template('admin/invoice_manager.html',
+                           invoices=ds_hoa_don,
+                           contracts=ds_hop_dong)
+
+
+# Thêm Hóa đơn mới
+@app.route('/admin/invoice/add', methods=['POST'])
+def add_invoice():
+    ten_hoa_don = request.form.get('ten_hoa_don')
+    so_tien = request.form.get('so_tien')
+    hop_dong_id = request.form.get('hop_dong_id')
+
+    new_bill = HoaDon(
+        ten_hoa_don=ten_hoa_don,
+        so_tien=float(so_tien),
+        id_hop_dong=hop_dong_id,
+        trang_thai=False
+    )
+
+    db.session.add(new_bill)
+    db.session.commit()
+    flash('Đã tạo hóa đơn thành công!', 'success')
+    return redirect(url_for('invoice_manager'))
+
+
+# Sửa Hóa đơn
+@app.route('/admin/invoice/update', methods=['POST'])
+def update_invoice():
+    invoice_id = request.form.get('id')
+    ten_hoa_don = request.form.get('ten_hoa_don')
+    so_tien = request.form.get('so_tien')
+    hop_dong_id = request.form.get('hop_dong_id')
+    trang_thai = request.form.get('trang_thai')
+
+    hoa_don = HoaDon.query.get(invoice_id)
+
+    if hoa_don:
+        hoa_don.ten_hoa_don = ten_hoa_don
+        hoa_don.so_tien = float(so_tien)
+        hoa_don.id_hop_dong = hop_dong_id
+
+        hoa_don.trang_thai = True if trang_thai == 'on' else False
+
+        db.session.commit()
+        flash('Cập nhật hóa đơn thành công!', 'success')
+
+    return redirect(url_for('invoice_manager'))
+
+
+# Xóa Hóa đơn
+@app.route('/admin/invoice/delete/<int:id>')
+def delete_invoice(id):
+    hoa_don = HoaDon.query.get(id)
+    if hoa_don:
+        db.session.delete(hoa_don)
+        db.session.commit()
+        flash('Đã xóa hóa đơn!', 'success')
+    return redirect(url_for('invoice_manager'))
+
 
 if __name__ == '__main__':
     app.run(debug=True)

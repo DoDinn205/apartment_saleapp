@@ -18,64 +18,153 @@
             <table class="table table-hover align-middle">
 
                 <thead class="table-light text-center">
-                    <tr>
-                        <th style="width: 5%">STT</th>
-                        <th style="width: 30%">Thông tin cư dân</th>
-                        <th style="width: 15%">Số điện thoại</th>
-                        <th style="width: 15%">Phòng</th>
-                        <th style="width: 25%">Thời hạn & Tiền cọc</th>
-                        <th style="width: 10%">Thao tác</th>
-                    </tr>
+                <tr>
+                    <th style="width: 5%">STT</th>
+                    <th style="width: 30%">Thông tin cư dân</th>
+                    <th style="width: 15%">Số điện thoại</th>
+                    <th style="width: 15%">Phòng</th>
+                    <th style="width: 25%">Thời hạn & Tiền cọc</th>
+                    <th style="width: 10%">Thao tác</th>
+                </tr>
                 </thead>
 
                 <tbody>
-                    {% for t in tenants %}
-                    <tr>
-                        <td class="text-center">{{ loop.index }}</td>
+                {% for t in tenants %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
 
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="{{ t.avatar }}" class="rounded-circle me-2"
-                                     style="width: 35px; height: 35px; object-fit: cover; border: 1px solid #dee2e6;">
-                                <div>
-                                    <div class="fw-bold text-primary">{{ t.name }}</div>
-                                    <div class="small text-muted fst-italic">ID: {{ t.id }}</div>
+                    <td align="center">
+                        <div class="d-flex align-items-center">
+                            {% if t.khach_hang and t.khach_hang.avatar %}
+                            <img src="{{ t.khach_hang.avatar }}" alt="Avatar" class="rounded-circle me-2" width="40"
+                                 height="40">
+                            {% else %}
+                            <img src="https://mdbootstrap.com/img/Photos/Others/placeholder-avatar.jpg"
+                                 class="rounded-circle me-2" width="40" height="40">
+                            {% endif %}
+
+                            <div>
+                                <div class="fw-bold text-primary">
+                                    {{ t.khach_hang.name if t.khach_hang else 'Không rõ tên' }}
+                                </div>
+                                <div class="small text-muted fst-italic">
+                                    ID: #{{ t.id }}
                                 </div>
                             </div>
-                        </td>
+                        </div>
+                    </td>
 
-                        <td class="text-center text-muted">
-                            {{ t.phone if t.phone else '--' }}
-                        </td>
+                    <td align="center">
+                        {% if t.khach_hang and t.khach_hang.phone %}
+                        <span class="fw-bold">{{ t.khach_hang.phone.phone }}</span>
+                        {% else %}
+                        <span class="text-muted small">-- Chưa có --</span>
+                        {% endif %}
+                    </td>
 
-                        <td class="text-center fw-bold">
-                            {{ t.ma_can_ho }}
-                        </td>
+                    <td>
+                        {% if t.can_ho %}
+                        <span class="badge bg-info text-dark">{{ t.can_ho.ma_can_ho }}</span>
+                        {% else %}
+                        <span class="text-danger">Mất dữ liệu phòng</span>
+                        {% endif %}
+                    </td>
 
-                        <td class="text-center">
-                            <div class="small text-muted">
-                                {{ t.ngay_ky.strftime('%d/%m/%y') }} - {{ t.thoi_han.strftime('%d/%m/%y') }}
+                    <td>
+                        <div class="small" align="center">
+                            <i class="bi bi-calendar-check"></i>
+                            {{ t.ngay_ky.strftime('%d/%m/%y') if t.ngay_ky else '...' }} -
+                            {{ t.ngay_tra.strftime('%d/%m/%y') if t.ngay_tra else '...' }}
+                        </div>
+                        <div class="text-danger fw-bold small" align="center">
+                            Cọc: {{ "{:,.0f}".format(t.tien_coc) }} đ
+                        </div>
+                    </td>
+
+                    <td class="text-center">
+
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                data-bs-target="#infoModal{{ t.id }}">
+                            <i class="bi bi-eye"></i> Xem / Sửa
+                        </button>
+                        <div class="modal fade" id="infoModal{{ t.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+
+                                    <form action="/admin/tenant/update" method="POST">
+                                        <div class="modal-header bg-info text-white">
+                                            <h5 class="modal-title">Hồ sơ: {{ t.khach_hang.name }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+
+                                        <div class="modal-body">
+                                            <div class="row">
+                                                <div class="col-md-6 border-end">
+                                                    <h6 class="text-primary">Thông tin cá nhân</h6>
+                                                    <input type="hidden" name="user_id" value="{{ t.khach_hang.id }}">
+
+                                                    <div class="mb-3">
+                                                        <label>Họ và tên:</label>
+                                                        <input type="text" name="name" class="form-control"
+                                                               value="{{ t.khach_hang.name }}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label>Số điện thoại:</label>
+                                                        <input type="text" name="phone" class="form-control"
+                                                               value="{{ t.khach_hang.phone.phone if t.khach_hang.phone else '' }}">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label>Username:</label>
+                                                        <input type="text" class="form-control"
+                                                               value="{{ t.khach_hang.username }}" disabled readonly>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <h6 class="text-primary">Thông tin thuê phòng</h6>
+                                                    <div class="mb-3">
+                                                        <label>Đang ở phòng:</label>
+                                                        <input type="text" class="form-control fw-bold"
+                                                               value="{{ t.can_ho.ma_can_ho }}" disabled readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label>Ngày bắt đầu:</label>
+                                                        <input type="text" class="form-control"
+                                                               value="{{ t.ngay_ky.strftime('%d/%m/%Y') }}" disabled
+                                                               readonly>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label>Ngày kết thúc (Hết hạn):</label>
+                                                        <input type="text" class="form-control"
+                                                               value="{{ t.ngay_tra.strftime('%d/%m/%Y') }}" disabled
+                                                               readonly>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                Đóng
+                                            </button>
+                                            <button type="submit" class="btn btn-primary">Lưu thông tin khách</button>
+                                        </div>
+                                    </form>
+
+                                </div>
                             </div>
-                            <div class="fw-bold text-danger">
-                                Cọc: {{ "{:,.0f}".format(t.tien_coc) }}
-                            </div>
-                        </td>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
 
-                        <td class="text-center">
-                            <button class="btn btn-sm btn-outline-primary" title="Xem chi tiết">
-                                <i class="fas fa-eye"></i> Xem
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-
-                    {% if not tenants %}
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            Chưa có dữ liệu người thuê.
-                        </td>
-                    </tr>
-                    {% endif %}
+                {% if not tenants %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        Chưa có dữ liệu người thuê.
+                    </td>
+                </tr>
+                {% endif %}
                 </tbody>
             </table>
         </div>

@@ -2,7 +2,8 @@ from flask import render_template, request, redirect, url_for, flash, jsonify
 from __init__ import app, login
 from flask_login import login_user, login_required, logout_user, current_user
 from sqlalchemy.sql.operators import endswith_op
-from models import HoaDon, HopDong, db
+from models import Account, HoaDon, HopDong, db
+import hashlib
 import math
 import os
 import utils
@@ -211,28 +212,77 @@ def payment_confirm(bill_id):
 def invoice_manager():
     ds_hoa_don = HoaDon.query.order_by(HoaDon.id.desc()).all()
     ds_hop_dong = HopDong.query.all()
+    quy_dinh = QuyDinh.query.order_by(QuyDinh.id.desc()).first()
+    if not quy_dinh:
+        quy_dinh = QuyDinh(gia_dien=0, gia_nuoc=0, phi_dich_vu=0)
     return render_template('admin/invoice_manager.html',
                            invoices=ds_hoa_don,
-                           contracts=ds_hop_dong)
+                           contracts=ds_hop_dong,
+                           rule=quy_dinh)
 
 
 # Thêm Hóa đơn mới
 @app.route('/admin/invoice/add', methods=['POST'])
 def add_invoice():
-    ten_hoa_don = request.form.get('ten_hoa_don')
-    so_tien = request.form.get('so_tien')
     hop_dong_id = request.form.get('hop_dong_id')
+    invoice_type = request.form.get('invoice_type')
+    ten_hoa_don = request.form.get('ten_hoa_don')
+
+    hop_dong = HopDong.query.get(hop_dong_id)
+    quy_dinh = QuyDinh.query.order_by(QuyDinh.id.desc()).first()
+
+
+    so_dien=0
+    so_nuoc=0
+    tien_phong = 0
+    tien_dien = 0
+    tien_nuoc = 0
+    phi_dich_vu = 0
+    tong_cong = 0
+
+    if invoice_type == 'monthly':
+        so_dien = float(request.form.get('so_dien', 0))
+        so_nuoc = float(request.form.get('so_nuoc', 0))
+
+        gia_dien = quy_dinh.gia_dien if quy_dinh else 0
+        gia_nuoc = quy_dinh.gia_nuoc if quy_dinh else 0
+        gia_dich_vu = quy_dinh.phi_dich_vu if quy_dinh else 0
+        tien_phong = hop_dong.gia_chot_thue
+        tien_dien = so_dien * gia_dien
+        tien_nuoc = so_nuoc * gia_nuoc
+        phi_dich_vu = gia_dich_vu
+
+        tong_cong = tien_phong + tien_dien + tien_nuoc + phi_dich_vu
+
+    elif invoice_type == 'coc':
+        tong_cong = hop_dong.tien_coc
+
+    else:
+        tong_cong = float(request.form.get('so_tien', 0))
 
     new_bill = HoaDon(
         ten_hoa_don=ten_hoa_don,
-        so_tien=float(so_tien),
         id_hop_dong=hop_dong_id,
-        trang_thai=False
+        trang_thai=False,
+
+        # Lưu các trường chi tiết
+        tien_phong=tien_phong,
+        tien_dien=tien_dien,
+        tien_nuoc=tien_nuoc,
+        phi_dich_vu=phi_dich_vu,
+        so_dien=so_dien,
+        so_nuoc=so_nuoc,
+        so_tien=tong_cong
     )
 
-    db.session.add(new_bill)
-    db.session.commit()
-    flash('Đã tạo hóa đơn thành công!', 'success')
+    try:
+        db.session.add(new_bill)
+        db.session.commit()
+        flash('Đã tạo hóa đơn thành công!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi: {str(e)}', 'danger')
+
     return redirect(url_for('invoice_manager'))
 
 
@@ -240,22 +290,22 @@ def add_invoice():
 @app.route('/admin/invoice/update', methods=['POST'])
 def update_invoice():
     invoice_id = request.form.get('id')
-    ten_hoa_don = request.form.get('ten_hoa_don')
-    so_tien = request.form.get('so_tien')
-    hop_dong_id = request.form.get('hop_dong_id')
-    trang_thai = request.form.get('trang_thai')
-
     hoa_don = HoaDon.query.get(invoice_id)
+    quy_dinh = QuyDinh.query.order_by(QuyDinh.id.desc()).first()
 
     if hoa_don:
-        hoa_don.ten_hoa_don = ten_hoa_don
-        hoa_don.so_tien = float(so_tien)
-        hoa_don.id_hop_dong = hop_dong_id
+        hoa_don.ten_hoa_don = request.form.get('ten_hoa_don')
+        hoa_don.trang_thai = True if request.form.get('trang_thai') == 'on' else False
 
-        hoa_don.trang_thai = True if trang_thai == 'on' else False
+        new_so_dien = float(request.form.get('so_dien', 0))
+        new_so_nuoc = float(request.form.get('so_nuoc', 0))
+        hoa_don.tien_dien = new_so_dien * quy_dinh.gia_dien
+        hoa_don.tien_nuoc = new_so_nuoc * quy_dinh.gia_nuoc
+        hoa_don.phi_dich_vu = float(request.form.get('phi_dich_vu', hoa_don.phi_dich_vu))
+        hoa_don.so_tien = hoa_don.tien_phong + hoa_don.tien_dien + hoa_don.tien_nuoc + hoa_don.phi_dich_vu
 
         db.session.commit()
-        flash('Cập nhật hóa đơn thành công!', 'success')
+        flash('Đã cập nhật hóa đơn thành công!', 'success')
 
     return redirect(url_for('invoice_manager'))
 

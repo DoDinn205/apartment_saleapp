@@ -50,6 +50,10 @@
                     href="/admin/apartments_admin" class="text-decoration-none px-3 py-2 d-block"><i
                     class="bi bi-house-fill"></i>
                 Căn hộ</a></li>
+            <li class="{% if request.endpoint == 'account_manager' %}active{% endif %}"><a href="/admin/account-manager"
+                                                                                          class="text-decoration-none px-3 py-2 d-block"><i
+                    class="bi bi-list-ol"></i>
+                Tài khoản</a></li>
             <li class="{% if request.endpoint == 'tenant_manager' %}active{% endif %}"><a href="/admin/tenants"
                                                                                           class="text-decoration-none px-3 py-2 d-block"><i
                     class="bi bi-list-ol"></i>
@@ -67,7 +71,8 @@
                     class="bi bi-list-ol"></i>
 
                 Quy định</a></li>
-            <li class=""><a href="#" class="text-decoration-none px-3 py-2 d-block"><i
+            <li class="{% if request.endpoint == 'stats_view' %}active{% endif %}"><a href="/admin/stats"
+                                                                                             class="text-decoration-none px-3 py-2 d-block"><i
                     class="bi bi-bar-chart-line-fill"></i>
                 Thống kê báo cáo</a></li>
         </ul>

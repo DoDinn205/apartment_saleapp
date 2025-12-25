@@ -14,7 +14,8 @@ from sqlalchemy.orm import joinedload
 from models import HoaDon
 from __init__ import app, db
 from dateutil.relativedelta import relativedelta
-
+from sqlalchemy import func, extract
+from datetime import datetime, timedelta
 from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, PhoneNumber, ChiTietHopDong
 
 
@@ -289,25 +290,98 @@ def cancel_contract():
     return redirect(url_for('contracts_admin'))
 
 
+@app.route('/admin/account-manager')
+@admin_required
+def account_manager():
+    users = Account.query.order_by(Account.id.desc()).all()
+    return render_template('admin/account_manager.html', users=users)
+
+
+@app.route('/admin/account/add', methods=['POST'])
+@admin_required
+def add_account():
+    username = request.form.get('username')
+    password = request.form.get('password')
+    name = request.form.get('name')
+    user_type = request.form.get('user_type')
+
+    existing_user = Account.query.filter_by(username=username).first()
+    if existing_user:
+        flash(f"Tên đăng nhập '{username}' đã tồn tại!", 'danger')
+        return redirect(url_for('account_manager'))
+
+    hashed_pass = hashlib.md5(password.encode('utf-8')).hexdigest()
+
+    new_user = Account(
+        username=username,
+        password=hashed_pass,
+        name=name,
+        user_type=user_type,
+        avatar='https://res.cloudinary.com/dxxwcby8l/image/upload/v1690528749/avatar-default_r71k1w.png'
+    )
+
+    try:
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Thêm tài khoản thành công!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Lỗi hệ thống: {str(e)}', 'danger')
+
+    return redirect(url_for('account_manager'))
+
+
+@app.route('/admin/account/update', methods=['POST'])
+@admin_required
+def update_account():
+    user_id = request.form.get('id')
+    name = request.form.get('name')
+    user_type = request.form.get('user_type')
+    new_password = request.form.get('password')
+
+    user = Account.query.get(user_id)
+    if user:
+        try:
+            user.name = name
+            user.user_type = user_type
+            if new_password and new_password.strip() != "":
+                user.password = hashlib.md5(new_password.encode('utf-8')).hexdigest()
+
+            db.session.commit()
+            flash('Cập nhật tài khoản thành công!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Lỗi cập nhật: {str(e)}', 'danger')
+
+    return redirect(url_for('account_manager'))
+
+
+@app.route('/admin/account/delete/<int:id>')
+@admin_required
+def delete_account(id):
+    if id == current_user.id:
+        flash('CẢNH BÁO: Bạn không thể tự xóa chính mình!', 'warning')
+        return redirect(url_for('account_manager'))
+
+    user = Account.query.get(id)
+    if user:
+        try:
+            db.session.delete(user)
+            db.session.commit()
+            flash('Đã xáo tài khoản!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Không thể xóa tài khoản này! Tài khoản đang liên kết với Hợp đồng hoặc Hóa đơn.', 'danger')
+
+    return redirect(url_for('account_manager'))
+
+
 @app.route('/admin/tenants')
 @admin_required
 def tenant_manager():
-    # tenants_data = db.session.query(
-    #     HopDong.id,
-    #     Customer.name,
-    #     Customer.avatar,
-    #     PhoneNumber.phone,
-    #     CanHo.ma_can_ho,
-    #     HopDong.ngay_ky,
-    #     HopDong.ngay_tra,
-    #     HopDong.tien_coc
-    # ).join(Customer, HopDong.id_nguoi_thue == Customer.user_id) \
-    #     .join(CanHo, HopDong.id_can_ho == CanHo.id) \
-    #     .outerjoin(PhoneNumber, Account.id == PhoneNumber.user_id) \
-    #     .all()
     tenants_data = HopDong.query.options(
-        joinedload(HopDong.khach_hang).joinedload(Customer.phone),  # Nối bảng khách và sđt
-        joinedload(HopDong.can_ho)  # Nối bảng căn hộ
+        joinedload(HopDong.khach_hang).joinedload(Customer.phone),
+        joinedload(HopDong.can_ho)
     ).all()
 
     return render_template('admin/tenant_manager.html', tenants=tenants_data)
@@ -353,7 +427,7 @@ def approve_booking(id):
     if existing_contract is None:
         return redirect(url_for('contracts_admin'))
 
-    booking.trang_thai=1
+    booking.trang_thai = 1
     db.session.add(booking)
 
     noti = Notification(
@@ -388,3 +462,67 @@ def reject_booking(id):
     db.session.commit()
 
     return redirect('/admin/notifications')
+
+
+@app.route('/admin/stats')
+@admin_required
+def stats_view():
+    # Tình trạng phòng (tròn)
+    room_stats = db.session.query(
+        CanHo.trang_thai,
+        func.count(CanHo.id)
+    ).group_by(CanHo.trang_thai).all()
+    status_labels = []
+    status_data = []
+
+    map_status={
+        'CONTRONG':'Còn trống',
+        'DANGTHUE':'Đang thuê',
+        'BAOTRI':'Bảo trì'
+    }
+
+    for status, count in room_stats:
+        if hasattr(status, 'name'):
+            raw_name=status.name
+        else:
+            raw_name=str(status)
+
+        label_vi=map_status.get(raw_name,raw_name)
+
+        status_labels.append(label_vi)
+        status_data.append(count)
+
+    # Doanh thu theo tháng (cột)
+    current_year = datetime.now().year
+    revenue_query = db.session.query(
+        func.extract('month', HoaDon.ngay_tao),
+        func.sum(HoaDon.so_tien)
+    ).filter(
+        func.extract('year', HoaDon.ngay_tao) == current_year,
+        HoaDon.trang_thai == True
+    ).group_by(
+        func.extract('month', HoaDon.ngay_tao)
+    ).all()
+
+    rev_labels = [f"Tháng {i}" for i in range(1, 13)]
+    rev_data = [0] * 12
+
+    for month, amount in revenue_query:
+        rev_data[int(month) - 1] = float(amount)
+
+    today = datetime.now()
+    next_30_days = today + timedelta(days=30)
+
+    expiring_contracts = HopDong.query.filter(
+        HopDong.ngay_tra >= today,
+        HopDong.ngay_tra <= next_30_days
+    ).order_by(HopDong.ngay_tra.asc()).all()
+
+    return render_template('admin/stats.html',
+                           status_labels=status_labels,
+                           status_data=status_data,
+                           rev_labels=rev_labels,
+                           rev_data=rev_data,
+                           expiring=expiring_contracts,
+                           year=current_year,
+                           today=today)

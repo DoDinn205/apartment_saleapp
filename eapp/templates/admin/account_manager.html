@@ -1,0 +1,166 @@
+{% extends "layout/base_admin.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content px-3 pt-4">
+    <h3 class="mt-4">Quản lý Tài khoản</h3>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="mb-3">
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+            <i class="bi bi-person-plus-fill"></i> Thêm tài khoản mới
+        </button>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-white">
+            <h6 class="m-0 font-weight-bold text-success">Danh sách người dùng hệ thống</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle table-bordered">
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th>ID</th>
+                            <th>Avatar</th>
+                            <th>Tên người dùng</th>
+                            <th>Username</th>
+                            <th>Vai trò</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td class="text-center">{{ u.id }}</td>
+                            <td class="text-center">
+                                <img src="{{ u.avatar if u.avatar else 'https://via.placeholder.com/40' }}"
+                                     class="rounded-circle border" width="40" height="40" style="object-fit: cover;">
+                            </td>
+                            <td class="fw-bold" align="center">{{ u.name }}</td>
+                            <td class="text-primary font-monospace" align="center">{{ u.username }}</td>
+                            <td class="text-center">
+                                {% if u.user_type == 'admin' %}
+                                    <span class="badge bg-danger">Quản trị viên</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">Khách hàng</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editUserModal{{ u.id }}" title="Sửa thông tin / Đổi mật khẩu">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+
+                                {% if current_user.id != u.id %}
+                                <a href="/admin/account/delete/{{ u.id }}" class="btn btn-sm btn-secondary" onclick="return confirm('CẢNH BÁO: Xóa tài khoản này sẽ mất vĩnh viễn. Bạn chắc chắn chứ?')" title="Xóa tài khoản">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn btn-sm btn-light text-muted" disabled title="Không thể tự xóa mình"><i class="bi bi-trash"></i></button>
+                                {% endif %}
+
+                                <div class="modal fade" id="editUserModal{{ u.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content text-start">
+                                            <form action="/admin/account/update" method="POST">
+                                                <div class="modal-header bg-warning text-dark">
+                                                    <h5 class="modal-title">Cập nhật: {{ u.username }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="id" value="{{ u.id }}">
+
+                                                    <div class="mb-3">
+                                                        <label class="fw-bold">Họ và tên:</label>
+                                                        <input type="text" name="name" class="form-control" value="{{ u.name }}" required>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="fw-bold">Vai trò:</label>
+                                                        <select name="user_type" class="form-select">
+                                                            <option value="customer" {% if u.user_type == 'customer' %}selected{% endif %}>Khách hàng (Người thuê)</option>
+                                                            <option value="admin" {% if u.user_type == 'admin' %}selected{% endif %}>Quản trị viên (Admin)</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <hr class="my-4">
+
+                                                    <div class="bg-light p-3 rounded border">
+                                                        <label class="fw-bold text-danger mb-1"><i class="bi bi-key"></i> Đặt lại mật khẩu</label>
+                                                        <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu mới (nếu muốn đổi)">
+                                                        <div class="form-text small">Để trống ô này nếu bạn KHÔNG muốn đổi mật khẩu.</div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                                    <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/admin/account/add" method="POST">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Thêm tài khoản mới</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="fw-bold">Tên đăng nhập (Username) (*)</label>
+                        <input type="text" name="username" class="form-control" required placeholder="Ví dụ: vanlong, admin2..." autocomplete="off">
+                        <div class="form-text">Dùng để đăng nhập hệ thống.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Mật khẩu (*)</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Họ và tên (*)</label>
+                        <input type="text" name="name" class="form-control" required placeholder="Ví dụ: Nguyễn Văn Long">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Vai trò</label>
+                        <select name="user_type" class="form-select">
+                            <option value="customer">Khách hàng (Người thuê)</option>
+                            <option value="admin">Quản trị viên (Admin)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-success">Tạo tài khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

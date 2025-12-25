@@ -21,128 +21,176 @@
 
     <div class="mb-3">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addInvoiceModal">
-            <i class="bi bi-plus-circle"></i> Tạo hóa đơn mới
+            <i class="bi bi-plus-circle"></i> Tạo phiếu thu mới
         </button>
     </div>
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                <i class="bi bi-table"></i> Danh sách hóa đơn
-            </h6>
+            <h6 class="m-0 font-weight-bold text-primary">Danh sách phiếu thu</h6>
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light text-center">
+                <table class="table table-bordered table-hover align-middle">
+                    <thead class="table-light text-center fw-bold">
                         <tr>
-                            <th>ID</th>
-                            <th>Nội dung thu</th>
-                            <th>Phòng / Khách hàng</th>
-                            <th>Số tiền</th>
-                            <th>Ngày tạo</th>
+                            <th>Tháng/Ngày</th>
+                            <th>Phòng</th>
+
+                            <th>Tiền phòng</th>
+                            <th>Điện</th>
+                            <th>Nước</th>
+                            <th>Dịch vụ</th>
+
+                            <th>Tổng cộng</th>
                             <th>Trạng thái</th>
-                            <th style="width: 150px;">Hành động</th>
+                            <th>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% if invoices|length == 0 %}
-                            <tr>
-                                <td colspan="7" class="text-center text-muted">Chưa có hóa đơn nào.</td>
-                            </tr>
+                            <tr><td colspan="9" class="text-center text-muted">Chưa có dữ liệu.</td></tr>
                         {% else %}
                             {% for hd in invoices %}
                             <tr>
-                                <td align="center">{{ hd.id }}</td>
-                                <td align="center">{{ hd.ten_hoa_don }}</td>
-                                <td align="center">
+                                <td class="text-center">
+                                    {{ hd.ngay_tao.strftime('%d/%m/%Y') }}
+                                </td>
+
+                                <td class="text-center fw-bold">
                                     {% if hd.hop_dong %}
-                                        <strong>P.{{ hd.hop_dong.can_ho.ma_can_ho }}</strong><br>
-                                        <small class="text-muted">{{ hd.hop_dong.khach_hang.name }}</small>
+                                        {{ hd.hop_dong.can_ho.ma_can_ho }}
                                     {% else %}
-                                        <span class="text-danger">Không xác định</span>
+                                        ---
                                     {% endif %}
                                 </td>
-                                <td class="fw-bold text-danger" align="center">{{ "{:,.0f}".format(hd.so_tien) }} đ</td>
-                                <td align="center">
-                                    {% if hd.ngay_tao %}
-                                        {{ hd.ngay_tao.strftime('%d/%m/%Y') }}
-                                    {% else %}
-                                        --/--/----
-                                    {% endif %}
+
+                                {% if hd.tien_phong == 0 and hd.tien_dien == 0 and hd.tien_nuoc == 0 %}
+                                    <td colspan="4" class="text-center text-primary fst-italic fw-bold bg-light">
+                                        {{ hd.ten_hoa_don }}
+                                    </td>
+                                {% else %}
+                                    <td class="text-end">{{ "{:,.0f}".format(hd.tien_phong) }}</td>
+                                    <td class="text-end">
+                                        {{ "{:,.0f}".format(hd.tien_dien) }} <br>
+                                        <small class="text-muted" style="font-size: 10px;">({{ hd.so_dien }} kWh)</small>
+                                    </td>
+                                    <td class="text-end">
+                                        {{ "{:,.0f}".format(hd.tien_nuoc) }} <br>
+                                        <small class="text-muted" style="font-size: 10px;">({{ hd.so_nuoc }} m3)</small>
+                                    </td>
+                                    <td class="text-end">{{ "{:,.0f}".format(hd.phi_dich_vu) }}</td>
+                                {% endif %}
+                                <td class="text-end fw-bold text-danger">
+                                    {{ "{:,.0f}".format(hd.so_tien) }}
                                 </td>
-                                <td align="center">
+
+                                <td class="text-center">
                                     {% if hd.trang_thai %}
-                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Đã thanh toán</span>
+                                        <span class="badge bg-success">Đã thu</span>
                                     {% else %}
-                                        <span class="badge bg-warning text-dark"><i class="bi bi-hourglass-split"></i> Chưa thu</span>
+                                        <span class="badge bg-warning text-dark">Chưa thu</span>
                                     {% endif %}
                                 </td>
-                                <td align="center">
-                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ hd.id }}" title="Chỉnh sửa">
+
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ hd.id }}" title="Sửa chi tiết">
                                         <i class="bi bi-pencil-square"></i>
                                     </button>
 
                                     {% if not hd.trang_thai %}
-                                    <a href="/payment/checkout/{{ hd.id }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Link thanh toán MoMo">
-                                        <i class="bi bi-qr-code"></i>
-                                    </a>
+                                        <a href="/payment/checkout/{{ hd.id }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Thanh toán MoMo">
+                                            Pay
+                                        </a>
                                     {% endif %}
-
-                                    <a href="/admin/invoice/delete/{{ hd.id }}" class="btn btn-sm btn-secondary" onclick="return confirm('Bạn chắc chắn muốn xóa hóa đơn này?')" title="Xóa">
+                                    <a href="/admin/invoice/delete/{{ hd.id }}" class="btn btn-sm btn-secondary" onclick="return confirm('Xóa hóa đơn này?')" title="Xóa">
                                         <i class="bi bi-trash"></i>
                                     </a>
 
-                                    <div class="modal fade" id="editModal{{ hd.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal fade" id="editModal{{ hd.id }}" tabindex="-1">
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <form action="/admin/invoice/update" method="POST">
                                                     <div class="modal-header bg-warning text-dark">
-                                                        <h5 class="modal-title">Cập nhật hóa đơn #{{ hd.id }}</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        <h5 class="modal-title">Sửa hóa đơn #{{ hd.id }}</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                                     </div>
                                                     <div class="modal-body text-start">
                                                         <input type="hidden" name="id" value="{{ hd.id }}">
 
                                                         <div class="mb-3">
-                                                            <label class="form-label fw-bold">Tên hóa đơn:</label>
+                                                            <label class="fw-bold">Tên hóa đơn:</label>
                                                             <input type="text" name="ten_hoa_don" class="form-control" value="{{ hd.ten_hoa_don }}" required>
                                                         </div>
 
-                                                        <div class="mb-3">
-                                                            <label class="form-label fw-bold">Số tiền (VNĐ):</label>
-                                                            <input type="number" name="so_tien" class="form-control" value="{{ hd.so_tien }}" required>
+                                                        {% if hd.tien_phong > 0 or hd.tien_dien > 0 %}
+                                                            <div class="bg-light p-3 rounded border mb-3">
+                                                                <h6 class="small text-muted fw-bold border-bottom pb-1">Cập nhật chỉ số</h6>
+                                                                <div class="row g-2">
+                                                                    <div class="col-6">
+                                                                        <label class="small">Số điện (kWh):</label>
+                                                                        <input type="number" name="so_dien" id="editDien{{ hd.id }}" class="form-control"
+                                                                               value="{{ hd.so_dien }}" oninput="calcEdit({{ hd.id }})">
+                                                                    </div>
+                                                                    <div class="col-6">
+                                                                        <label class="small">Số nước (m3):</label>
+                                                                        <input type="number" name="so_nuoc" id="editNuoc{{ hd.id }}" class="form-control"
+                                                                               value="{{ hd.so_nuoc }}" oninput="calcEdit({{ hd.id }})">
+                                                                    </div>
+
+                                                                    <div class="col-6 text-muted small">
+                                                                        => <span id="txtTienDien{{ hd.id }}">{{ "{:,.0f}".format(hd.tien_dien) }}</span> đ
+                                                                    </div>
+                                                                    <div class="col-6 text-muted small">
+                                                                        => <span id="txtTienNuoc{{ hd.id }}">{{ "{:,.0f}".format(hd.tien_nuoc) }}</span> đ
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="row g-2 mb-3">
+                                                                <div class="col-6">
+                                                                    <label class="small fw-bold">Tiền phòng:</label>
+                                                                    <input type="text" class="form-control bg-white" id="valTienPhong{{ hd.id }}" value="{{ hd.tien_phong }}" readonly>
+                                                                </div>
+                                                                <div class="col-6">
+                                                                    <label class="small fw-bold">Phí dịch vụ:</label>
+                                                                    <input type="number" name="phi_dich_vu" id="editDV{{ hd.id }}" class="form-control"
+                                                                           value="{{ hd.phi_dich_vu }}" oninput="calcEdit({{ hd.id }})">
+                                                                </div>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="alert alert-info small">
+                                                                Đây là hóa đơn cọc/nhập tay, không có chi tiết điện nước.
+                                                            </div>
+                                                        {% endif %}
+
+                                                        <div class="mb-3 text-end">
+                                                            <label class="fw-bold text-danger">TỔNG CỘNG:</label>
+                                                            {% if hd.tien_phong == 0 and hd.tien_dien == 0 %}
+                                                                <input type="number" name="so_tien" class="form-control fw-bold text-danger fs-4 text-end" value="{{ hd.so_tien }}">
+                                                            {% else %}
+                                                                <div class="fs-4 fw-bold text-danger">
+                                                                    <span id="txtTongCong{{ hd.id }}">{{ "{:,.0f}".format(hd.so_tien) }}</span> đ
+                                                                </div>
+                                                                {% endif %}
                                                         </div>
 
-                                                        <div class="mb-3">
-                                                            <label class="form-label fw-bold">Thuộc Hợp đồng (Phòng):</label>
-                                                            <select name="hop_dong_id" class="form-select">
-                                                                {% for c in contracts %}
-                                                                    <option value="{{ c.id }}" {% if c.id == hd.id_hop_dong %}selected{% endif %}>
-                                                                        HĐ #{{ c.id }} - P.{{ c.can_ho.ma_can_ho }} ({{ c.khach_hang.name }})
-                                                                    </option>
-                                                                {% endfor %}
-                                                            </select>
-                                                        </div>
-
-                                                        <div class="form-check p-3 border rounded bg-light">
-                                                            <input class="form-check-input" type="checkbox" name="trang_thai" id="status{{ hd.id }}"
-                                                                   {% if hd.trang_thai %}checked{% endif %}>
+                                                        <div class="form-check p-2 border rounded">
+                                                            <input class="form-check-input" type="checkbox" name="trang_thai" id="status{{ hd.id }}" {% if hd.trang_thai %}checked{% endif %}>
                                                             <label class="form-check-label fw-bold text-success" for="status{{ hd.id }}">
-                                                                Đã thanh toán xong?
+                                                                Đã thanh toán?
                                                             </label>
-                                                            <div class="form-text">Tick vào nếu khách đã trả tiền mặt.</div>
                                                         </div>
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                                                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                                                        <button type="submit" class="btn btn-primary">Lưu</button>
                                                     </div>
                                                 </form>
                                             </div>
                                         </div>
                                     </div>
-                                    </td>
+                                </td>
                             </tr>
                             {% endfor %}
                         {% endif %}
@@ -153,45 +201,153 @@
     </div>
 </div>
 
-<div class="modal fade" id="addInvoiceModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="addInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form action="/admin/invoice/add" method="POST">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Tạo hóa đơn mới</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title"><i class="bi bi-calculator"></i> Lập phiếu thu tiền</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
+
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Nội dung thu:</label>
-                        <input type="text" name="ten_hoa_don" class="form-control" placeholder="Ví dụ: Tiền điện tháng 10" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Số tiền (VNĐ):</label>
-                        <input type="number" name="so_tien" class="form-control" placeholder="Nhập số tiền..." required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Chọn Khách hàng / Phòng:</label>
-                        <select name="hop_dong_id" class="form-select" required>
-                            <option value="" disabled selected>-- Chọn hợp đồng --</option>
+                        <label class="fw-bold">Phòng / Khách hàng (*)</label>
+                        <select name="hop_dong_id" id="selectContract" class="form-select" required onchange="resetCalc()">
+                            <option value="" selected disabled>-- Chọn hợp đồng --</option>
                             {% for c in contracts %}
-                                <option value="{{ c.id }}">
-                                    HĐ #{{ c.id }} - P.{{ c.can_ho.ma_can_ho }} - Khách: {{ c.khach_hang.name }}
+                                <option value="{{ c.id }}"
+                                        data-room-price="{{ c.gia_chot_thue }}"
+                                        data-coc="{{ c.tien_coc }}"
+                                        data-room-name="P.{{ c.can_ho.ma_can_ho }}">
+                                    P.{{ c.can_ho.ma_can_ho }} - {{ c.khach_hang.name }}
                                 </option>
                             {% endfor %}
                         </select>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Loại thu:</label>
+                        <select class="form-select" name="invoice_type" id="invoiceType" onchange="toggleInputs()">
+                            <option value="monthly">Thu tiền phòng theo tháng</option>
+                            <option value="coc">Thu tiền cọc</option>
+                            <option value="manual">Khác</option>
+                        </select>
+                    </div>
+
+                    <div id="calculatorArea" class="p-3 bg-light border rounded mb-3">
+                        <h6 class="text-info border-bottom pb-2"><i class="bi bi-lightning-charge"></i> Nhập chỉ số tiêu thụ</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="small fw-bold">Số điện tiêu thụ (kWh)</label>
+                                <div class="input-group">
+                                    <input type="number" name="so_dien" id="inputDien" class="form-control" value="0" min="0" oninput="calculateTotal()">
+                                    <span class="input-group-text small">x {{ "{:,.0f}".format(rule.gia_dien) if rule else '0' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="small fw-bold">Số nước tiêu thụ (m3)</label>
+                                <div class="input-group">
+                                    <input type="number" name="so_nuoc" id="inputNuoc" class="form-control" value="0" min="0" oninput="calculateTotal()">
+                                    <span class="input-group-text small">x {{ "{:,.0f}".format(rule.gia_nuoc) if rule else '0' }}</span>
+                                </div>
+                            </div>
+                            <div class="col-12 text-end text-muted small fst-italic">
+                                + Tiền phòng (<span id="txtRoomPrice">0</span>)
+                                + Dịch vụ ({{ "{:,.0f}".format(rule.phi_dich_vu) if rule else '0' }})
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fw-bold">Nội dung phiếu thu:</label>
+                        <input type="text" name="ten_hoa_don" id="tenHoaDon" class="form-control" placeholder="Ví dụ: Tiền phòng tháng 12..." required>
+                    </div>
+
+                    <div class="mb-3 text-end">
+                        <label class="fw-bold">TỔNG CỘNG:</label>
+                        <input type="number" name="so_tien" id="totalAmount" class="form-control fw-bold text-danger fs-4 text-end" required>
+                    </div>
                 </div>
+
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary">Tạo hóa đơn</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu hóa đơn</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block script %}
+<script>
+    const GIA_DIEN = {{ rule.gia_dien if rule else 0 }};
+    const GIA_NUOC = {{ rule.gia_nuoc if rule else 0 }};
+    const PHI_DICH_VU = {{ rule.phi_dich_vu if rule else 0 }};
+
+    function toggleInputs() {
+        const type = document.getElementById('invoiceType').value;
+        const calcArea = document.getElementById('calculatorArea');
+        const nameInput = document.getElementById('tenHoaDon');
+        const totalInput = document.getElementById('totalAmount');
+        const select = document.getElementById('selectContract');
+        const option = select.options[select.selectedIndex];
+
+        const roomPrice = parseFloat(option?.getAttribute('data-room-price')) || 0;
+        const cocPrice = parseFloat(option?.getAttribute('data-coc')) || 0;
+        const roomName = option?.getAttribute('data-room-name') || "";
+
+        const today = new Date();
+        const curMonth = today.getMonth() + 1;
+        const curYear = today.getFullYear();
+
+        if (type === 'monthly') {
+            calcArea.classList.remove('d-none');
+            document.getElementById('txtRoomPrice').innerText = roomPrice.toLocaleString();
+            nameInput.value = `Tiền phòng T${curMonth}/${curYear} - ${roomName}`;
+            totalInput.readOnly = false;
+            calculateTotal();
+        } else if (type === 'coc') {
+            calcArea.classList.add('d-none');
+            totalInput.value = cocPrice;
+            nameInput.value = `Thu tiền cọc - ${roomName}`;
+        } else {
+            calcArea.classList.add('d-none');
+            totalInput.value = "";
+            nameInput.value = "";
+        }
+    }
+
+    function calculateTotal() {
+        const dien = parseFloat(document.getElementById('inputDien').value) || 0;
+        const nuoc = parseFloat(document.getElementById('inputNuoc').value) || 0;
+        const select = document.getElementById('selectContract');
+        const roomPrice = parseFloat(select.options[select.selectedIndex]?.getAttribute('data-room-price')) || 0;
+
+        const total = (dien * GIA_DIEN) + (nuoc * GIA_NUOC) + roomPrice + PHI_DICH_VU;
+        document.getElementById('totalAmount').value = total;
+    }
+
+    function resetCalc() {
+        document.getElementById('inputDien').value = 0;
+        document.getElementById('inputNuoc').value = 0;
+        toggleInputs();
+    }
+
+    function calcEdit(id) {
+        let soDien = parseFloat(document.getElementById(`editDien${id}`).value) || 0;
+        let soNuoc = parseFloat(document.getElementById(`editNuoc${id}`).value) || 0;
+        let phiDV = parseFloat(document.getElementById(`editDV${id}`).value) || 0;
+        let tienPhong = parseFloat(document.getElementById(`valTienPhong${id}`).value) || 0;
+
+        let tienDien = soDien * GIA_DIEN;
+        let tienNuoc = soNuoc * GIA_NUOC;
+        let tong = tienPhong + tienDien + tienNuoc + phiDV;
+
+        document.getElementById(`txtTienDien${id}`).innerText = tienDien.toLocaleString('en-US');
+        document.getElementById(`txtTienNuoc${id}`).innerText = tienNuoc.toLocaleString('en-US');
+        document.getElementById(`txtTongCong${id}`).innerText = tong.toLocaleString('en-US');
+    }
+</script>
 {% endblock %}

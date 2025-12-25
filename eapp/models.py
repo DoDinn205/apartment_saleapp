@@ -210,10 +210,16 @@ class QuyDinh(BaseModel):
 class HoaDon(BaseModel):
     __tablename__ = "hoa_don"
 
+    id = Column(Integer, primary_key=True, autoincrement=True)
     ten_hoa_don = Column(String(100), nullable=False)
+    tien_phong = Column(Float, default=0)
+    tien_dien = Column(Float, default=0)
+    tien_nuoc = Column(Float, default=0)
+    phi_dich_vu = Column(Float, default=0)
+    so_dien = Column(Float, default=0)
+    so_nuoc = Column(Float, default=0)
     so_tien = Column(Float, nullable=False, default=0)
     ngay_tao = Column(DATETIME, default=datetime.now())
-
     trang_thai = Column(Boolean, default=False)
     id_hop_dong = Column(Integer, ForeignKey('hop_dong.id'), nullable=False)
     hop_dong = relationship('HopDong', backref='hoa_don', lazy=True)
@@ -223,7 +229,7 @@ class HoaDon(BaseModel):
 
 
 class Notification(BaseModel):
-    __tablename__='thong_bao'
+    __tablename__ = 'thong_bao'
 
     sender_id = Column(Integer, ForeignKey(Account.id), nullable=False)
     receiver_id = Column(Integer, ForeignKey(Account.id), nullable=False)
@@ -234,6 +240,7 @@ class Notification(BaseModel):
     content = Column(Text, nullable=False)
 
     ngay_tao = Column(DATETIME, default=datetime.now())
+
 
 if __name__ == '__main__':
     with app.app_context():

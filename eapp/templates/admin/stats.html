@@ -1,0 +1,188 @@
+{% extends "layout/base_admin.html" %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content px-3 pt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold text-uppercase text-primary m-0">
+            <i class="bi bi-bar-chart-line-fill"></i> Báo cáo thống kê
+        </h3>
+
+        <div class="w-50">
+            <select id="reportSelector" class="form-select fw-bold shadow-sm" onchange="filterReport()">
+                <option value="all">--- Hiển thị tất cả ---</option>
+                <option value="status">1. Tình trạng thuê phòng</option>
+                <option value="revenue">2. Doanh thu theo tháng</option>
+                <option value="expiring">3. Hợp đồng sắp hết hạn</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-5 mb-4 report-section" id="section-status">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-white border-bottom-0">
+                    <h6 class="m-0 font-weight-bold text-dark">Tình trạng thuê phòng</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7 mb-4 report-section" id="section-revenue">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 bg-white border-bottom-0">
+                    <h6 class="m-0 font-weight-bold text-success">Doanh thu theo tháng (Đã thu tiền)</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4 report-section" id="section-expiring">
+        <div class="card-header py-3 bg-warning text-dark">
+            <h6 class="m-0 fw-bold">
+                <i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo: Hợp đồng sắp hết hạn (30 ngày tới)
+            </h6>
+        </div>
+        <div class="card-body">
+            {% if expiring %}
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Mã HĐ</th>
+                                <th>Phòng</th>
+                                <th>Người thuê</th>
+                                <th>Ngày hết hạn</th>
+                                <th>Thời gian còn lại</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hd in expiring %}
+                            <tr>
+                                <td>#{{ hd.id }}</td>
+                                <td class="fw-bold text-primary">{{ hd.can_ho.ma_can_ho }}</td>
+                                <td>{{ hd.khach_hang.name }}</td>
+                                <td class="text-danger fw-bold">
+                                    {{ hd.ngay_tra.strftime('%d/%m/%Y') }}
+                                </td>
+                                <td>
+                                    {% set days_left = (hd.ngay_tra - today).days %}
+                                    <span class="badge bg-danger">{{ days_left }} ngày nữa</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted text-center my-3">
+                    <i class="bi bi-check-circle-fill text-success"></i>Không có hợp đồng nào sắp hết hạn trong 30 ngày tới.
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    // HÀM LỌC BÁO CÁO
+    function filterReport() {
+        const selected = document.getElementById('reportSelector').value;
+
+        // Hiện tất cả các section báo cáo
+        const statusSec = document.getElementById('section-status');
+        const revenueSec = document.getElementById('section-revenue');
+        const expiringSec = document.getElementById('section-expiring');
+
+        // Mặc định ẩn hết
+        statusSec.classList.add('d-none');
+        revenueSec.classList.add('d-none');
+        expiringSec.classList.add('d-none');
+
+        // Nếu chọn All -> Hiện hết
+        if (selected === 'all') {
+            statusSec.classList.remove('d-none');
+            revenueSec.classList.remove('d-none');
+            expiringSec.classList.remove('d-none');
+
+            // Trả lại layout cột chia đôi (col-md-5 và col-md-7)
+            statusSec.className = "col-md-5 mb-4 report-section";
+            revenueSec.className = "col-md-7 mb-4 report-section";
+        }
+        else if (selected === 'status') {
+            statusSec.classList.remove('d-none');
+            // Khi hiện 1 mình thì cho nó full màn hình cho đẹp (col-md-12)
+            statusSec.className = "col-md-8 mx-auto mb-4 report-section";
+        }
+        else if (selected === 'revenue') {
+            revenueSec.classList.remove('d-none');
+            revenueSec.className = "col-md-12 mb-4 report-section";
+        }
+        else if (selected === 'expiring') {
+            expiringSec.classList.remove('d-none');
+        }
+    }
+
+    // 1. VẼ BIỂU ĐỒ TRÒN
+    const ctxPie = document.getElementById('statusChart').getContext('2d');
+    const statusData = {{ status_data | tojson }};
+
+    new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+            labels: {{ status_labels | tojson }},
+            datasets: [{
+                data: statusData,
+                backgroundColor: ['#1cc88a', '#4e73df', '#f6c23e', '#e74a3b', '#36b9cc'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+
+    // 2. VẼ BIỂU ĐỒ CỘT
+    const ctxBar = document.getElementById('revenueChart').getContext('2d');
+    new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: {{ rev_labels | tojson }},
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: {{ rev_data | tojson }},
+                backgroundColor: 'rgba(78, 115, 223, 0.8)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 1,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return value.toLocaleString('vi-VN') + ' đ';
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

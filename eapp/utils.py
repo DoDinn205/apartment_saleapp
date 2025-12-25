@@ -4,7 +4,8 @@ from datetime import datetime
 import cloudinary.uploader
 from sqlalchemy.exc import IntegrityError
 
-from models import Account, Customer, CanHo, DatPhong, LoaiCanHo, PhoneNumber, Notification
+from models import Account, Customer, CanHo, DatPhong, LoaiCanHo, PhoneNumber, Notification, ApartmentStatus, QuyDinh, \
+    HopDong, ChiTietHopDong
 from functools import wraps
 from flask import abort, redirect, url_for
 from models import Account, Customer, CanHo, DatPhong, LoaiCanHo
@@ -81,7 +82,7 @@ def add_user(name, avatar, phone, username, password):
         raise Exception('Dữ liệu không hợp lệ')
 
 
-def add_booking(user_id, canho_id, ngay_nhan, thoi_han):
+def add_booking(user_id, canho_id, ngay_nhan, thoi_han, tien_coc):
     try:
         # Xử lý ngày tháng về dạng chuẩn
         if isinstance(ngay_nhan, str):
@@ -93,6 +94,7 @@ def add_booking(user_id, canho_id, ngay_nhan, thoi_han):
             canho_id=canho_id,
             ngay_nhan=ngay_nhan_obj,
             thoi_han=thoi_han,
+            tien_coc=tien_coc
         )
         db.session.add(booking)
 
@@ -130,3 +132,92 @@ def admin_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+def get_not_renting_customers():
+    return Customer.query.filter_by(is_renting=False)
+
+
+def create_new_customer(name, phone):
+    if Account.query.filter_by(username=phone).first():
+        return None
+
+    if PhoneNumber.query.filter_by(phone=phone).first():
+        return None
+
+    try:
+        default_pass = hashlib.md5("123456".encode('utf-8')).hexdigest()
+        new_customer = Customer(
+            username=phone,
+            password=default_pass,
+            name=name,
+            user_type='customer',
+            is_renting=True,
+        )
+        db.session.add(new_customer)
+        db.session.flush()
+        new_phone_obj = PhoneNumber(phone=phone, user_id=new_customer.id)
+        db.session.add(new_phone_obj)
+
+        return new_customer
+
+    except Exception as e:
+        return None
+
+
+def process_create_contract(contract_data, customer_obj, manager_id):
+    try:
+        # 1. Tìm thông tin liên quan
+        room_obj = CanHo.query.filter_by(ma_can_ho=contract_data['ma_can_ho']).first()
+        if not room_obj:
+            return False
+
+        if room_obj.trang_thai != ApartmentStatus.CONTRONG:  # Tuỳ chọn: kiểm tra phòng trống
+            return False
+
+        # Lấy quy định mới nhất
+        current_rule = QuyDinh.query.order_by(QuyDinh.id.desc()).first()
+        rule_id = current_rule.id if current_rule else None
+
+        # 2. Tạo Hợp Đồng
+        new_hd = HopDong(
+            ngay_ky=contract_data['ngay_ky'],
+            ngay_tra=contract_data['ngay_tra'],
+            tien_coc=contract_data['tien_coc'],
+            gia_chot_thue=contract_data['gia_chot_thue'],  # Cần đảm bảo model có field này
+            id_quan_ly=manager_id,
+            id_nguoi_thue=customer_obj.id,
+            id_can_ho=room_obj.id,
+            id_quy_dinh=rule_id
+        )
+
+        room_obj.trang_thai = ApartmentStatus.DANGTHUE
+        customer_obj.is_renting = True
+
+        db.session.add(new_hd)
+        db.session.flush()
+
+        new_detail = ChiTietHopDong(
+            id_hop_dong=new_hd.id,
+            id_nguoi_thue=customer_obj.id
+        )
+        db.session.add(new_detail)
+        db.session.commit()
+
+        return True
+
+    except Exception as e:
+        db.session.rollback()
+        return False
+
+
+def handle_customer_selection(option, form_data):
+    if option == 'existing':
+        cus_id = form_data.get('customer_id')
+        return get_user_by_id(cus_id)
+
+    elif option == 'new':
+        name = form_data.get('new_name')
+        phone = form_data.get('new_phone')
+        return create_new_customer(name, phone)
+    return None

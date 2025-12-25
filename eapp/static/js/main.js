@@ -20,7 +20,7 @@ function openNotifications() {
             let html = '';
             data.forEach(n => {
                 html += `
-                    <div class="mb-2 p-2 border rounded ${n.is_read ? '' : 'bg-light'}">
+                    <div class="mb-2 p-2 border rounded">
                         <strong>${n.title}</strong>
                         <p class="mb-1">${n.content}</p>
                         <small class="text-muted">${n.ngay_tao}</small>

@@ -182,7 +182,7 @@ class DatPhong(BaseModel):
     ngay_dat = Column(DATETIME, default=datetime.now())
     ngay_nhan = Column(DATETIME, nullable=False)
     thoi_han = Column(Integer, nullable=False)
-
+    tien_coc = Column(Float, nullable=False)
     # trạng thái: 0 = chờ duyệt, 1 = đã duyệt, 2 = từ chối
     trang_thai = Column(Integer, default=0)
 

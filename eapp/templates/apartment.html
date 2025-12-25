@@ -61,12 +61,27 @@
                                        required>
                             </div>
                         </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="small font-weight-bold">Tiền cọc (20%):</label>
+                                <input type="number" class="form-control" name="tien_coc" min="{{ apartment.gia_thue * 20 / 100 }}" max="{{ apartment.gia_thue }}"
+                                       value="{{ apartment.gia_thue * 20 / 100 }}" required>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-2">
+                        {% if current_user.is_renting == True %}
+                        <h4 class="mt-3">
+                            <span class="bg-danger text text-white p-2">Bạn đang thuê phòng! Không thể thuê phòng khác!</span>
+
+                        </h4>
+
+                        {% else %}
                         {% if apartment.trang_thai.name == 'CONTRONG' %}
                         {% if current_user.is_authenticated %}
-                        <button type="submit" class="btn btn-danger btn-block shadow font-weight-bold py-2" onclick="notifyAdmin()">
+                        <button type="submit" class="btn btn-danger btn-block shadow font-weight-bold py-2">
                             XÁC NHẬN ĐẶT PHÒNG
                         </button>
                         {% else %}
@@ -78,6 +93,7 @@
                         <button type="button" class="btn btn-secondary btn-block" disabled>
                             TẠM HẾT PHÒNG
                         </button>
+                        {% endif %}
                         {% endif %}
                     </div>
                 </form>

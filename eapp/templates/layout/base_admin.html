@@ -11,9 +11,11 @@
             crossorigin="anonymous">
 
     </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
     {% block head %}{% endblock %}
 </head>
-<body>
+<body style="margin-top: 0px">
 
 <div class="container">
     {% if success_msg %}

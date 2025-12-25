@@ -13,6 +13,7 @@ from utils import *
 from sqlalchemy.orm import joinedload
 from models import HoaDon
 from __init__ import app, db
+from dateutil.relativedelta import relativedelta
 
 from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, PhoneNumber, ChiTietHopDong
 
@@ -22,10 +23,12 @@ from models import QuyDinh, Account, Customer, HopDong, CanHo, ApartmentStatus, 
 def admin_index():
     return render_template('admin/index.html')
 
+
 @app.route('/index')
 @admin_required
 def return_client_view():
     return redirect('/')
+
 
 # Route quản lý căn hộ
 @app.route('/admin/apartments_admin')
@@ -160,7 +163,7 @@ def contracts_admin():
         joinedload(HopDong.can_ho)
     ).order_by(HopDong.ngay_ky.desc()).all()
 
-    customers = Customer.query.all()
+    customers = get_not_renting_customers()
 
     # Lấy danh sách phòng TRỐNG để chọn
     empty_apartments = CanHo.query.filter_by(trang_thai=ApartmentStatus.CONTRONG).all()
@@ -175,119 +178,43 @@ def contracts_admin():
 @app.route('/admin/contracts/create', methods=['POST'])
 @admin_required
 def create_contract():
-    # --- 1. LẤY DỮ LIỆU TỪ FORM ---
-    ma_can_ho_str = request.form.get('ma_can_ho')  # Đây là Mã hiển thị (VD: P101)
-
-    # Xử lý ngày tháng (HTML date input trả về chuỗi YYYY-MM-DD)
     try:
-        ngay_ky = datetime.strptime(request.form.get('ngay_ky'), '%Y-%m-%d')
-        ngay_tra = datetime.strptime(request.form.get('ngay_tra'), '%Y-%m-%d')
-        tien_coc = float(request.form.get('tien_coc'))
-        gia_chot_thue = float(request.form.get('gia_chot_thue'))
+        contract_data = {
+            'ma_can_ho': request.form.get('ma_can_ho'),
+            'ngay_ky': datetime.strptime(request.form.get('ngay_ky'), '%Y-%m-%d'),
+            'ngay_tra': datetime.strptime(request.form.get('ngay_tra'), '%Y-%m-%d'),
+            'tien_coc': float(request.form.get('tien_coc')),
+            'gia_chot_thue': float(request.form.get('gia_chot_thue'))
+        }
     except ValueError:
-        return redirect(url_for('contract_list'))
+        flash('Dữ liệu ngày tháng hoặc tiền tệ không hợp lệ.', 'danger')
+        return redirect(url_for('contracts_admin'))
 
-
-
-    # --- 2. XỬ LÝ NGƯỜI THUÊ ---
     option = request.form.get('customer_option')
-    customer_obj = None
 
-    try:
-        if option == 'existing':
-            cus_id_input = request.form.get('customer_id')
-            customer_obj = Customer.query.get(cus_id_input)
+    customer_obj = handle_customer_selection(option, request.form)
+    if not customer_obj:
+        flash("Không lấy được thông tin người dùng", 'danger')
+        return redirect(url_for('contracts_admin'))
 
-            if not customer_obj:
-                return redirect(url_for('contract_list'))
-
-        elif option == 'new':
-            name = request.form.get('new_name')
-            phone_str = request.form.get('new_phone')
-
-            # Kiểm tra trùng Username (Username là SĐT)
-            if Account.query.filter_by(username=phone_str).first():
-                flash(f'Tài khoản/SĐT {phone_str} đã tồn tại trong hệ thống!', 'danger')
-                return redirect(url_for('contract_list'))
-
-            # Kiểm tra trùng trong bảng PhoneNumber (cho chắc chắn)
-            if PhoneNumber.query.filter_by(phone=phone_str).first():
-                flash(f'Số điện thoại {phone_str} đã được liên kết với tài khoản khác!', 'danger')
-                return redirect(url_for('contract_list'))
-
-            # Tạo Customer Mới (Account)
-            default_pass = hashlib.md5("123456".encode('utf-8')).hexdigest()
-            new_customer = Customer(
-                username=phone_str,  # Username = SĐT
-                password=default_pass,
-                name=name,
-                user_type='customer',
-                is_renting=True,  # Đánh dấu là đang thuê
-            )
-
-            db.session.add(new_customer)
-            db.session.flush()  # Đẩy tạm vào DB để sinh ra new_customer.id (Integer)
-
-            # Tạo PhoneNumber Mới (Liên kết với Customer vừa tạo)
-            new_phone = PhoneNumber(
-                phone=phone_str,
-                user_id=new_customer.id  # Lấy ID vừa flush
-            )
-            db.session.add(new_phone)
-
-            # Gán đối tượng vừa tạo vào biến chung
-            customer_obj = new_customer
-
-            flash(f'Đã tạo tài khoản mới cho {name}. Mật khẩu: 123456', 'info')
-
-        # --- 3. TẠO HỢP ĐỒNG ---
-        # Tìm đối tượng Căn hộ dựa trên Mã căn hộ (String)
-        room_obj = CanHo.query.filter_by(ma_can_ho=ma_can_ho_str).first()
-        current_rule = QuyDinh.query.order_by(QuyDinh.id.desc()).first()
-
-        # Khởi tạo Hợp đồng
-        new_hd = HopDong(
-            ngay_ky=ngay_ky,
-            ngay_tra=ngay_tra,
-            tien_coc=tien_coc,
-            gia_chot_thue=gia_chot_thue,
-            id_quan_ly=current_user.id,
-            id_nguoi_thue=customer_obj.id,
-            id_can_ho=room_obj.id,
-            id_quy_dinh=current_rule.id
-        )
-
-        # --- 4. CẬP NHẬT TRẠNG THÁI ---
-        # Cập nhật trạng thái phòng -> Đã thuê
-        room_obj.trang_thai = ApartmentStatus.DANGTHUE
-        # Cập nhật trạng thái người dùng (nếu chọn người cũ chưa thuê)
-        customer_obj.is_renting = True
-
-        db.session.add(new_hd)
-        db.session.flush()
-
-        new_detail = ChiTietHopDong(
-            id_hop_dong=new_hd.id,
-            id_nguoi_thue=customer_obj.id
-        )
-        db.session.add(new_detail)
-
-        db.session.commit()
-
-        flash('Tạo hợp đồng thành công!', 'success')
-
-    except Exception as e:
-        db.session.rollback()  # Hoàn tác nếu có lỗi
-        print(f"Error: {str(e)}")  # In lỗi ra console để debug
-        flash(f'Đã xảy ra lỗi: {str(e)}', 'danger')
+    is_success = process_create_contract(
+        contract_data=contract_data,
+        customer_obj=customer_obj,
+        manager_id=current_user.id
+    )
+    if is_success:
+        flash("Tạo thành công", 'success')
+    else:
+        flash("Tạo thất bại", 'danger')
 
     return redirect(url_for('contracts_admin'))
+
 
 @app.route('/admin/contracts/add-member', methods=['POST'])
 @admin_required
 def add_contract_member():
     contract_id = request.form.get('contract_id')
-    customer_id = request.form.get('customer_id') # ID của người được chọn thêm vào
+    customer_id = request.form.get('customer_id')  # ID của người được chọn thêm vào
 
     contract = HopDong.query.get(contract_id)
     customer = Customer.query.get(customer_id)
@@ -316,7 +243,7 @@ def add_contract_member():
             id_nguoi_thue=customer_id,
             vai_tro='Thành viên'
         )
-        customer.is_renting = True # Cập nhật trạng thái khách
+        customer.is_renting = True  # Cập nhật trạng thái khách
         db.session.add(new_member)
         db.session.commit()
         flash(f'Đã thêm {customer.name} vào căn hộ!', 'success')
@@ -351,6 +278,9 @@ def cancel_contract():
     contract = HopDong.query.get(ma_hd)
 
     if contract:
+        u = Customer.query.get(contract.id_nguoi_thue)
+        u.is_renting = False
+
         db.session.delete(contract)
 
         db.session.commit()
@@ -404,6 +334,7 @@ def update_tenant_info():
 
     return redirect('/admin/tenants')
 
+
 @app.route('/admin/notifications')
 @admin_required
 def admin_booking():
@@ -411,23 +342,30 @@ def admin_booking():
     return render_template('admin/notification_admin.html', bookings=bookings)
 
 
-
 @app.route('/admin/booking/approve<id>')
 @admin_required
 def approve_booking(id):
     booking = DatPhong.query.get(id)
+    existing_contract = HopDong.query.filter_by(
+        id_nguoi_thue=booking.customer.id
+    ).first()
+
+    if existing_contract is None:
+        return redirect(url_for('contracts_admin'))
 
     booking.trang_thai=1
     db.session.add(booking)
+
     noti = Notification(
         sender_id=current_user.id,
         receiver_id=booking.customer.id,
         booking_id=booking.id,
         title='Đặt phòng thành công',
-        content='Yêu cầu của bạn đã được chấp nhận'
+        content='Yêu cầu thuê phòng ' + booking.can_ho.ma_can_ho + ' của bạn đã được duyệt'
     )
     db.session.add(noti)
     db.session.commit()
+
     return redirect('/admin/notifications')
 
 
@@ -435,7 +373,7 @@ def approve_booking(id):
 @admin_required
 def reject_booking(id):
     booking = DatPhong.query.get(id)
-    booking.trang_thai=2
+    booking.trang_thai = 2
 
     db.session.add(booking)
 
@@ -444,116 +382,9 @@ def reject_booking(id):
         receiver_id=booking.customer.id,
         booking_id=booking.id,
         title='Đặt phòng thất bại',
-        content='Yêu cầu của bạn đã bị quản lý từ chối'
+        content='Yêu cầu thuê phòng ' + booking.can_ho.ma_can_ho + ' của bạn đã bị quản lý từ chối'
     )
     db.session.add(noti)
     db.session.commit()
 
     return redirect('/admin/notifications')
-
-# class HoaDonView(ModelView):
-#     def is_accessible(self):
-#         return current_user.is_authenticated and current_user.user_type == 'admin'
-#
-#     column_labels = {
-#         'ten_hoa_don': 'Nội dung',
-#         'so_tien': 'Số tiền (vnđ)',
-#         'ngay_tao': 'Ngày tạo',
-#         'trang_thai': 'Trạng thái',
-#         'hop_dong': 'Hợp đồng',
-#         'test_payment': 'Thanh toán'
-#     }
-#
-#     column_list = ['id', 'ten_hoa_don', 'so_tien', 'trang_thai', 'test_payment']
-#
-#     def _test_payment_link(view, context, model, name):
-#         if not model.trang_thai:
-#             checkout_url = f"/payment/checkout/{model.id}"
-#             return Markup(
-#                 f'<a href="{checkout_url}" target="_blank" class="btn btn-sm btn-warning">Thanh toán tại đây</a>')
-#         return Markup('<span class="badge bg-success">Đã thanh toán</span>')
-#
-#     column_formatters = {
-#         'so_tien': lambda v, c, m, p: "{:,.0f}".format(m.so_tien),
-#         'test_payment': _test_payment_link
-#     }
-#
-#     form_columns = ['ten_hoa_don', 'so_tien', 'trang_thai', 'hop_dong']
-#
-#
-#
-# admin.add_view(HoaDonView(HoaDon, db.session, name='Quản lý Hóa đơn', endpoint='hoadon'))
-
-# T comment đoạn code trở về sau vì mình đã tự tạo trang admin riêng rồi nên không cần thiết dùng mấy cái view mặc định nữa
-
-# class AuthenticatedModelView(ModelView):
-#     def is_accessible(self):
-#         return current_user.is_authenticated and current_user.user_type == 'admin'
-#
-#     def inaccessible_callback(self, name, **kwargs):
-#         return redirect('/login')
-#
-#
-# class AuthenticatedBaseView(BaseView):
-#     def is_accessible(self):
-#         return current_user.is_authenticated and current_user.user_type == 'admin'
-#
-#     def inaccessible_callback(self, name, **kwargs):
-#         return redirect('/login')
-
-
-# class AccountView(AuthenticatedModelView):
-#     column_list = ('username', 'name', 'user_type')
-#     column_searchable_list = ['username', 'name']
-#
-#     def on_model_change(self, form, model, is_created):
-#         if form.password.data:
-#             model.password = str(hashlib.md5(form.password.data.encode('utf-8')).hexdigest())
-
-
-# class LogoutView(BaseView):
-#     @expose('/')
-#     def index(self):
-#         logout_user()
-#         return redirect('/admin')
-#
-#     def is_accessible(self):
-#         return current_user.is_authenticated
-
-
-# class CanHoView(AuthenticatedModelView):
-#     column_list = ('ma_can_ho', 'gia_thue', 'dien_tich', 'trang_thai', 'image')
-#     column_searchable_list = ['ma_can_ho']
-#     column_filters = ['trang_thai', 'gia_thue']
-#     column_editable_list = ['trang_thai', 'gia_thue']
-#     can_export = True
-#
-#     def _list_thumbnail(view, context, model, name):
-#         if not model.image:
-#             return ''
-#         return Markup('<img src="%s" width="100">' % model.image)
-#
-#     column_formatters = {
-#         'image': _list_thumbnail
-#     }
-#
-#     form_overrides = {
-#         'image': FileField
-#     }
-#
-#     def on_model_change(self, form, model, is_created):
-#         if request.files.get('image'):
-#             try:
-#                 res = cloudinary.uploader.upload(request.files['image'])
-#                 model.image = res['secure_url']
-#             except Exception as ex:
-#                 print(f"Lỗi upload ảnh: {str(ex)}")
-#
-#
-# admin.add_view(CanHoView(CanHo, db.session, name='Căn Hộ'))
-# admin.add_view(AccountView(Account, db.session, name='Tài Khoản'))
-# admin.add_view(AuthenticatedModelView(HopDong, db.session, name='Hợp Đồng'))
-# admin.add_view(AuthenticatedModelView(QuyDinh, db.session, name='Quy Định'))
-
-# Thêm nút Đăng xuất
-# admin.add_view(LogoutView(name='Đăng xuất'))

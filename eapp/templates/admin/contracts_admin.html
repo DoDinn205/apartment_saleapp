@@ -14,6 +14,8 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <form action="{{ url_for('create_contract') }}" method="POST">
+
+
                         <div class="modal-header bg-primary text-white">
                             <h5 class="modal-title">Tạo hợp đồng thuê</h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -111,6 +113,7 @@
                                     </div>
                                 </div>
                             </div>
+
 
                         </div>
                         <div class="modal-footer">
@@ -297,4 +300,16 @@
 
 {% block script %}
 <script src="{{ url_for('static', filename='js/contracts_admin.js') }}"></script>
+
+{% if auto_open_modal %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('createContractModal');
+        if (modalEl) {
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}

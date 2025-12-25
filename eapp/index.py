@@ -13,8 +13,6 @@ from utils import check_login
 
 @app.route('/')
 def index():
-    loai_canho = utils.load_loai_canho()
-
     page = int(request.args.get('page', 1))
     ds_canho = utils.load_canho(kw=request.args.get('keyword'),
                                 loai_canho_id=request.args.get('id_loai_can_ho'),
@@ -120,26 +118,29 @@ def apartment_detail(apartment_id):
 @app.route('/booking', methods=['POST'])
 @login_required
 def booking_process():
-    try:
-        canho_id = request.form.get('apartment_id')
-        ngay_nhan = request.form.get('start_date')
-        thoi_han = request.form.get('duration')
-        page = 1
+    if current_user.is_renting != True:
 
-        if utils.add_booking(current_user.id, canho_id, ngay_nhan, thoi_han):
+        try:
+            canho_id = request.form.get('apartment_id')
+            ngay_nhan = request.form.get('start_date')
+            thoi_han = request.form.get('duration')
+            tien_coc = request.form.get('tien_coc')
             ds_canho = utils.load_canho(canho_id)
-            msg = 'Bạn đã đặt phòng thành công. Chúng tôi sẽ liên hệ bạn sớm!'
-            return render_template('index.html', apartments=ds_canho, success_msg=msg, page=page,
+            page = 1
+
+            if utils.add_booking(current_user.id, canho_id, ngay_nhan, thoi_han, tien_coc):
+                msg = 'Bạn đã đặt phòng thành công. Chúng tôi sẽ liên hệ bạn sớm!'
+                return render_template('index.html', apartments=ds_canho, success_msg=msg, page=page,
+                                       pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+            else:
+                err = 'Có lỗi xảy ra. Vui lòng thử lại sau!'
+                return render_template('index.html', apartments=ds_canho, err_msg=err, page=page,
+                                       pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+        except Exception as ex:
+            return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}', page=page,
                                    pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
-        else:
-            ds_canho = utils.load_canho(canho_id)
-            err = 'Có lỗi xảy ra. Vui lòng thử lại sau!'
-            return render_template('index.html', apartments=ds_canho, err_msg=err, page=page,
-                                   pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
-    except Exception as ex:
-        ds_canho = utils.load_canho(canho_id)
-        return render_template('index.html', apartments=ds_canho, err_msg=f'Lỗi hệ thống: {str(ex)}', page=page,
-                               pages=math.ceil(utils.count_apartment() / app.config['PAGE_SIZE']))
+    else:
+        return render_template('index.html')
 
 
 @app.route('/api/notifications')

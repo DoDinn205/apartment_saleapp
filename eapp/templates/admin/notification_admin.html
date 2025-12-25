@@ -15,6 +15,7 @@
             <th>Căn hộ</th>
             <th>Thời hạn thuê</th>
             <th>Ngày thuê</th>
+            <th>Tiền cọc</th>
             <th>Duyệt</th>
         </tr>
 
@@ -25,6 +26,7 @@
             <td>{{ b.can_ho.ma_can_ho }}</td>
             <td>{{ b.thoi_han }} tháng</td>
             <td>{{ b.ngay_nhan.strftime("%d-%m-%Y") }}</td>
+            <td>{{ "{:,.0f}".format(b.tien_coc) }}</td>
             <td>
                 <a href="/admin/booking/approve{{ b.id }}" class="btn btn-success">&check;</a>
                 <a href="/admin/booking/reject{{ b.id }}" class="btn btn-danger">&times;</a>
@@ -32,6 +34,8 @@
         </tr>
         {% endfor %}
     </table>
+    {% else %}
+    <h4 class="mb-4 mt-4 text-center">Không có thông báo</h4>
     {% endif %}
 </section>
 
